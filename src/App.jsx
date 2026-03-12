@@ -185,7 +185,7 @@ const COLORS = {
   border:      "rgba(255,255,255,0.10)",
   accent:      "#FFFFFF",
   text:        "#FFFFFF",
-  textMuted:   "rgba(255,255,255,0.75)",
+  textMuted:   "#F0EDE8",
   textSub:     "rgba(255,255,255,0.90)",
   neon:        "rgba(200,200,255,0.95)",
   danger:      "#FF4D6A",
@@ -346,7 +346,7 @@ function BottomNav({ active, setActive, profilePhoto, onProfilePhotoChange, cart
     </div>
   );
 }
-function CardDetailScreen({ card, onBack, onAddToCart, cart, onCartClick, tasa }) {
+function CardDetailScreen({ card, onBack, onAddToCart, onBuyNow, cart, onCartClick, tasa }) {
   const [selectedAmount, setSelectedAmount] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
@@ -368,6 +368,12 @@ function CardDetailScreen({ card, onBack, onAddToCart, cart, onCartClick, tasa }
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
+  const handleBuyNow = () => {
+    if (!selectedAmount) return;
+    const alreadyInCart = cart.some(i => i.id === card.id && i.selectedAmount === selectedAmount);
+    if (!alreadyInCart) onAddToCart({ ...card, selectedAmount, quantity });
+    if (onBuyNow) onBuyNow();
+  };
   return (
     <div style={{ minHeight:"100vh", paddingBottom:120, background:COLORS.bg }}>
       <div style={{ padding:"20px 20px 16px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -385,10 +391,10 @@ function CardDetailScreen({ card, onBack, onAddToCart, cart, onCartClick, tasa }
       </div>
       <div style={{ padding:"0 20px" }}>
         <div style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.10)", borderRadius:20, padding:"20px", marginBottom:16 }}>
-          <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, fontWeight:700, letterSpacing:"0.12em", margin:"0 0 8px" }}>MONTO:</p>
+          <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, fontWeight:700, letterSpacing:"0.12em", margin:"0 0 8px" }}>Monto:</p>
           <div style={{ position:"relative", marginBottom:20 }}>
             <select value={selectedAmount} onChange={e => setSelectedAmount(e.target.value)} style={{ width:"100%", padding:"14px 16px", background:"rgba(255,255,255,0.08)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:12, color: selectedAmount ? COLORS.text : COLORS.textMuted, fontSize:14, fontFamily:F, fontWeight:600, cursor:"pointer", outline:"none", appearance:"none", WebkitAppearance:"none" }}>
-              <option value="" disabled style={{ background:"#1a1a2e", color:"rgba(255,255,255,0.4)" }}>ELIGE UNA OPCIÓN</option>
+              <option value="" disabled style={{ background:"#1a1a2e", color:"#F0EDE8" }}>ELIGE UNA OPCIÓN</option>
               {(card.amounts||[]).map(a => {
                 const str = String(a).trim();
                 const isPureNum = !isNaN(parseFloat(str)) && !/[a-zA-Z]/.test(str);
@@ -400,7 +406,7 @@ function CardDetailScreen({ card, onBack, onAddToCart, cart, onCartClick, tasa }
             <span style={{ position:"absolute", right:14, top:"50%", transform:"translateY(-50%)", color:COLORS.textMuted, fontSize:12, pointerEvents:"none" }}>▼</span>
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
-            <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:0 }}>CANTIDAD:</p>
+            <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:0 }}>Cantidad:</p>
             <div style={{ display:"flex", alignItems:"center", background:"rgba(255,255,255,0.08)", border:"1px solid rgba(255,255,255,0.18)", borderRadius:10, overflow:"hidden" }}>
               <button onClick={() => setQuantity(q => Math.max(1, q - 1))} style={{ width:36, height:36, background:"none", border:"none", color:COLORS.text, fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700 }}>−</button>
               <span style={{ minWidth:32, textAlign:"center", color:COLORS.text, fontSize:15, fontWeight:800, fontFamily:F }}>{quantity}</span>
@@ -409,7 +415,7 @@ function CardDetailScreen({ card, onBack, onAddToCart, cart, onCartClick, tasa }
           </div>
           <div style={{ height:1, background:"rgba(255,255,255,0.08)", marginBottom:16 }}/>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-            <p style={{ color:COLORS.textMuted, fontSize:13, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:0 }}>TOTAL :</p>
+            <p style={{ color:COLORS.textMuted, fontSize:13, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:0 }}>Total:</p>
             <div style={{ textAlign:"right" }}>
               {(() => {
                 if (!selectedAmount) return <p style={{ color:COLORS.text, fontSize:22, fontWeight:900, fontFamily:F, margin:0 }}>Bs. 0,00</p>;
@@ -432,7 +438,7 @@ function CardDetailScreen({ card, onBack, onAddToCart, cart, onCartClick, tasa }
           </div>
         </div>
         <div style={{ display:"flex", gap:10 }}>
-          <button style={{ flex:1, padding:"15px 10px", background:"rgba(255,255,255,0.16)", border:"1px solid rgba(255,255,255,0.30)", borderRadius:14, color:COLORS.text, fontSize:13, fontWeight:800, fontFamily:F, cursor:"pointer", letterSpacing:"0.04em", backdropFilter:"blur(16px)", opacity: !selectedAmount ? 0.5 : 1 }}>Comprar ahora</button>
+          <button onClick={handleBuyNow} style={{ flex:1, padding:"15px 10px", background:"rgba(255,255,255,0.16)", border:"1px solid rgba(255,255,255,0.30)", borderRadius:14, color:COLORS.text, fontSize:13, fontWeight:800, fontFamily:F, cursor: !selectedAmount ? "not-allowed" : "pointer", letterSpacing:"0.04em", backdropFilter:"blur(16px)", opacity: !selectedAmount ? 0.5 : 1 }}>Comprar ahora</button>
           <button onClick={handleAddToCart} style={{ flex:1, padding:"15px 10px", background: added ? "rgba(120,220,120,0.18)" : "rgba(255,255,255,0.08)", border:`1px solid ${added ? "rgba(120,220,120,0.5)" : "rgba(255,255,255,0.18)"}`, borderRadius:14, color: added ? "rgba(120,220,120,1)" : COLORS.text, fontSize:13, fontWeight:800, fontFamily:F, cursor: !selectedAmount ? "not-allowed" : "pointer", backdropFilter:"blur(16px)", transition:"all 0.2s", opacity: !selectedAmount ? 0.5 : 1 }}>
             {added ? "✓ AGREGADO" : "AGREGAR AL CARRITO"}
           </button>
@@ -440,8 +446,8 @@ function CardDetailScreen({ card, onBack, onAddToCart, cart, onCartClick, tasa }
         <p style={{ color:COLORS.textMuted, fontSize:10, textAlign:"center", fontFamily:F, marginTop:14 }}>🔒 Entrega digital segura · 0–10 minutos</p>
         {card.description && (
           <div style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:14, padding:"14px 16px", marginTop:16 }}>
-            <p style={{ color:"rgba(255,255,255,0.45)", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 6px" }}>DESCRIPCIÓN</p>
-            <p style={{ color:"rgba(255,255,255,0.75)", fontSize:13, fontFamily:F, lineHeight:1.6, margin:0 }}>{card.description}</p>
+            <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 6px" }}>DESCRIPCIÓN</p>
+            <p style={{ color:"#F0EDE8", fontSize:13, fontFamily:F, lineHeight:1.6, margin:0 }}>{card.description}</p>
           </div>
         )}
       </div>
@@ -550,13 +556,13 @@ function AutoScrollCards({ cards, onCardClick }) {
   );
 }
 
-function HomeScreen({ setScreen, onLogoTap, onAddToCart, cart, onCartClick }) {
+function HomeScreen({ setScreen, onLogoTap, onAddToCart, onBuyNow, cart, onCartClick }) {
   const tasa = useTasa();
   const products = useProducts();
   const banner = useBanner();
   const active = products.filter(p => p.active !== false);
   const [detailCard, setDetailCard] = useState(null);
-  if (detailCard) return <CardDetailScreen card={detailCard} onBack={()=>setDetailCard(null)} onAddToCart={onAddToCart} cart={cart} onCartClick={onCartClick} tasa={tasa}/>;
+  if (detailCard) return <CardDetailScreen card={detailCard} onBack={()=>setDetailCard(null)} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} tasa={tasa}/>;
   return (
     <div style={{ padding:"24px 20px", paddingBottom:100, width:"100%", boxSizing:"border-box" }}>
       <div style={{ marginBottom:32 }}>
@@ -580,7 +586,7 @@ function HomeScreen({ setScreen, onLogoTap, onAddToCart, cart, onCartClick }) {
     </div>
   );
 }
-function StoreScreen({ onAddToCart, cart, onCartClick }) {
+function StoreScreen({ onAddToCart, onBuyNow, cart, onCartClick }) {
   const [filter, setFilter] = useState("Todos");
   const [detailCard, setDetailCard] = useState(null);
   const [search, setSearch] = useState("");
@@ -588,7 +594,7 @@ function StoreScreen({ onAddToCart, cart, onCartClick }) {
   const products = useProducts();
   const filters = ["Todos","Consola","PC","Mobile"];
   const active = products.filter(p => p.active !== false);
-  if (detailCard) return <CardDetailScreen card={detailCard} onBack={()=>setDetailCard(null)} onAddToCart={onAddToCart} cart={cart} onCartClick={onCartClick} tasa={tasa}/>;
+  if (detailCard) return <CardDetailScreen card={detailCard} onBack={()=>setDetailCard(null)} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} tasa={tasa}/>;
   const filtered = active.filter(c => {
     const cats = Array.isArray(c.category) ? c.category : [c.category].filter(Boolean);
     const matchCat = filter==="Todos" || cats.includes(filter);
@@ -599,7 +605,7 @@ function StoreScreen({ onAddToCart, cart, onCartClick }) {
     <div style={{ padding:"24px 20px", paddingBottom:100 }}>
       <div style={{ marginBottom:24 }}>
         <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, margin:"0 0 4px", letterSpacing:"0.1em" }}>TIENDA</p>
-        <h2 style={{ color:COLORS.text, fontSize:24, fontWeight:900, margin:0, fontFamily:F }}>Gift Cards<span style={{ color:"rgba(255,255,255,0.4)" }}>.</span></h2>
+        <h2 style={{ color:COLORS.text, fontSize:24, fontWeight:900, margin:0, fontFamily:F }}>Gift Cards<span style={{ color:"#F0EDE8" }}>.</span></h2>
       </div>
       <div style={{ background:COLORS.card, borderRadius:12, border:`1px solid ${COLORS.border}`, padding:"12px 16px", display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
         <span style={{ color:COLORS.textMuted }}>🔍</span>
@@ -644,7 +650,7 @@ function NexusScreen() {
       {!loaded && (
         <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:16, zIndex:2, background:"#0a0a14" }}>
           <div style={{ width:72, height:72, borderRadius:20, background:"linear-gradient(135deg,#7B6FFF,#4F8EFF)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:36 }}>◈</div>
-          <p style={{ color:"rgba(255,255,255,0.7)", fontSize:15, fontFamily:F, margin:0, fontWeight:700 }}>Nexus IA</p>
+          <p style={{ color:"#F0EDE8", fontSize:15, fontFamily:F, margin:0, fontWeight:700 }}>Nexus IA</p>
           <p style={{ color:"rgba(255,255,255,0.35)", fontSize:12, fontFamily:F, margin:0 }}>Cargando tu agente...</p>
           <div style={{ display:"flex", gap:8, marginTop:8 }}>
             {[0,1,2].map(i=><div key={i} style={{ width:10, height:10, borderRadius:"50%", background:"#7B6FFF", animation:`pulse 1.2s ease-in-out ${i*0.2}s infinite` }}/>)}
@@ -1144,24 +1150,24 @@ function OrderStatusScreen({ orderId, onBack }) {
                   </div>
                   <h3 style={{ color:st.color, fontSize:20, fontWeight:800, fontFamily:F, margin:"0 0 12px" }}>{st.title}</h3>
                   <div style={{ background:"rgba(255,255,255,0.06)", borderRadius:12, padding:"12px 16px", marginBottom:8 }}>
-                    <p style={{ color:"rgba(255,255,255,0.5)", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 4px" }}>MÉTODO DE PAGO</p>
+                    <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 4px" }}>MÉTODO DE PAGO</p>
                     <p style={{ color:"#fff", fontSize:15, fontWeight:800, fontFamily:F, margin:0 }}>
                       {{"pagomovil":"📱 Pago Móvil","binance":"🟡 Binance Pay","zinli":"💜 Zinli","googlepay":"🔵 Google Pay"}[order?.payment_method] || order?.payment_method}
                     </p>
                   </div>
                   <div style={{ background:"rgba(255,255,255,0.06)", borderRadius:12, padding:"12px 16px", marginBottom:8 }}>
-                    <p style={{ color:"rgba(255,255,255,0.5)", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 4px" }}>MONTO PAGADO</p>
+                    <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 4px" }}>Monto pagado</p>
                     <p style={{ color:"#ffffff", fontSize:22, fontWeight:900, fontFamily:F, margin:0 }}>
                       {order?.total_bs ? `Bs. ${Number(order.total_bs).toLocaleString("es-VE",{minimumFractionDigits:2,maximumFractionDigits:2})}` : "—"}
                     </p>
                   </div>
                   {order?.items && order.items.length > 0 && (
                     <div style={{ background:"rgba(255,255,255,0.06)", borderRadius:12, padding:"12px 16px" }}>
-                      <p style={{ color:"rgba(255,255,255,0.5)", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 8px" }}>TU PEDIDO</p>
+                      <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 8px" }}>TU PEDIDO</p>
                       {order.items.map((item,i) => (
                         <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom: i < order.items.length-1 ? 6 : 0 }}>
                           <p style={{ color:"#fff", fontSize:13, fontWeight:700, fontFamily:F, margin:0 }}>{item.name}</p>
-                          <p style={{ color:"rgba(255,255,255,0.6)", fontSize:12, fontFamily:F, margin:0 }}>{item.amount} × {item.quantity}</p>
+                          <p style={{ color:"#F0EDE8", fontSize:12, fontFamily:F, margin:0 }}>{item.amount} × {item.quantity}</p>
                         </div>
                       ))}
                     </div>
@@ -1251,7 +1257,7 @@ function AdminPanel({ onExit }) {
       <div style={{ padding:"16px 20px 0", background:"rgba(255,255,255,0.03)", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
           <div>
-            <p style={{ color:"rgba(255,255,255,0.4)", fontSize:9, fontFamily:F, margin:0, letterSpacing:"0.15em" }}>PANEL ADMIN</p>
+            <p style={{ color:"#F0EDE8", fontSize:9, fontFamily:F, margin:0, letterSpacing:"0.15em" }}>PANEL ADMIN</p>
             <h2 style={{ color:"#FFFFFF", fontSize:17, fontWeight:800, margin:0, fontFamily:F }}>Start Game</h2>
           </div>
           <button onClick={onExit} style={{ background:"rgba(255,77,106,0.12)", border:"1px solid rgba(255,77,106,0.3)", borderRadius:10, color:"#FF4D6A", fontSize:12, fontFamily:F, padding:"7px 14px", cursor:"pointer" }}>Salir</button>
@@ -1259,7 +1265,7 @@ function AdminPanel({ onExit }) {
         {/* Tabs */}
         <div style={{ display:"flex", gap:0 }}>
           {[{id:"orders",label:"Pedidos"},{id:"products",label:"Productos"},{id:"settings",label:"Ajustes"}].map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)} style={{ flex:1, padding:"10px 0", background:"none", border:"none", borderBottom:`2px solid ${tab===t.id?"#7B6FFF":"transparent"}`, color:tab===t.id?"#7B6FFF":"rgba(255,255,255,0.4)", fontSize:12, fontWeight:700, fontFamily:F, cursor:"pointer", transition:"all 0.15s" }}>{t.label}</button>
+            <button key={t.id} onClick={()=>setTab(t.id)} style={{ flex:1, padding:"10px 0", background:"none", border:"none", borderBottom:`2px solid ${tab===t.id?"#7B6FFF":"transparent"}`, color:tab===t.id?"#7B6FFF":"#F0EDE8", fontSize:12, fontWeight:700, fontFamily:F, cursor:"pointer", transition:"all 0.15s" }}>{t.label}</button>
           ))}
         </div>
       </div>
@@ -1358,7 +1364,7 @@ function AdminOrders() {
         <div>
           <p style={{ color:"#ffffff", fontSize:11, fontFamily:F, margin:"0 0 1px" }}>{ML[order.payment_method]||order.payment_method}</p>
           <p style={{ color:"rgba(255,255,255,0.9)", fontSize:10, fontFamily:F, margin:0 }}>Ref: {order.customer_ref}</p>
-          {order.customer_email && <p style={{ color:"rgba(255,255,255,0.6)", fontSize:10, fontFamily:F, margin:"2px 0 0" }}>✉️ {order.customer_email}</p>}
+          {order.customer_email && <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"2px 0 0" }}>✉️ {order.customer_email}</p>}
         </div>
         <div style={{ textAlign:"right" }}>
           <p style={{ color:"#fff", fontSize:14, fontWeight:800, fontFamily:F, margin:0 }}>{fmtBs(order.total||0, tasa)}</p>
@@ -1393,7 +1399,7 @@ function AdminOrders() {
   return (
     <div style={{ padding:"16px" }}>
       {/* Stats */}
-      <p style={{ color:"rgba(255,255,255,0.7)", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.08em", margin:"0 0 8px", textTransform:"capitalize" }}>📊 {monthLabel}</p>
+      <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.08em", margin:"0 0 8px", textTransform:"capitalize" }}>📊 {monthLabel}</p>
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:16 }}>
         {[{label:"Pendientes",count:monthOrders.filter(o=>o.status==="pending").length,color:"#F3BA2F"},
           {label:"Verificados",count:monthOrders.filter(o=>o.status==="verified").length,color:"#4F8EFF"},
@@ -1407,7 +1413,7 @@ function AdminOrders() {
       </div>
 
       {loading ? <p style={{ color:"rgba(255,255,255,0.9)", textAlign:"center", padding:"40px 0", fontFamily:F }}>Cargando...</p>
-      : orders.length===0 ? <p style={{ color:"rgba(255,255,255,0.7)", textAlign:"center", padding:"40px 0", fontFamily:F }}>Sin pedidos aún</p>
+      : orders.length===0 ? <p style={{ color:"#F0EDE8", textAlign:"center", padding:"40px 0", fontFamily:F }}>Sin pedidos aún</p>
       : sortedGroups.map(group => {
         const active = group.orders.filter(o => o.status !== "delivered");
         const delivered = group.orders.filter(o => o.status === "delivered");
@@ -1421,14 +1427,14 @@ function AdminOrders() {
               style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8, cursor:group.isToday?"default":"pointer" }}>
               <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                 <div style={{ height:1, width:12, background:"rgba(255,255,255,0.15)" }}/>
-                <p style={{ color: group.isToday ? "#7B6FFF" : "rgba(255,255,255,0.5)", fontSize:11, fontWeight:800, fontFamily:F, margin:0, letterSpacing:"0.08em" }}>
+                <p style={{ color: group.isToday ? "#7B6FFF" : "#F0EDE8", fontSize:11, fontWeight:800, fontFamily:F, margin:0, letterSpacing:"0.08em" }}>
                   {group.isToday ? "📅 HOY" : `📅 ${group.label}`}
                 </p>
                 <div style={{ height:1, flex:1, background:"rgba(255,255,255,0.15)" }}/>
               </div>
               <div style={{ display:"flex", alignItems:"center", gap:6, marginLeft:8 }}>
                 <span style={{ background:"rgba(255,255,255,0.07)", borderRadius:10, padding:"2px 8px", color:"rgba(255,255,255,0.9)", fontSize:9, fontFamily:F }}>{group.orders.length} pedidos</span>
-                {!group.isToday && <span style={{ color:"rgba(255,255,255,0.7)", fontSize:11 }}>{isDayCollapsed ? "▶" : "▼"}</span>}
+                {!group.isToday && <span style={{ color:"#F0EDE8", fontSize:11 }}>{isDayCollapsed ? "▶" : "▼"}</span>}
               </div>
             </div>
 
@@ -1443,7 +1449,7 @@ function AdminOrders() {
                     <div onClick={()=>setCollapsedDelivered(p=>({...p,[group.label]:!p[group.label]}))}
                       style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", marginBottom:6, padding:"7px 10px", background:"rgba(0,200,150,0.06)", border:"1px solid rgba(0,200,150,0.15)", borderRadius:10 }}>
                       <span style={{ color:"#00C896", fontSize:10, fontFamily:F, fontWeight:700, flex:1 }}>✅ Entregados ({delivered.length})</span>
-                      <span style={{ color:"rgba(255,255,255,0.7)", fontSize:11 }}>{isDeliveredCollapsed ? "▶" : "▼"}</span>
+                      <span style={{ color:"#F0EDE8", fontSize:11 }}>{isDeliveredCollapsed ? "▶" : "▼"}</span>
                     </div>
                     {!isDeliveredCollapsed && delivered.map(order => <OrderCard key={order.id} order={order}/>)}
                   </div>
@@ -1467,20 +1473,20 @@ function ProductFormPanel({ form, setForm, editing, saving, saveProduct, onCance
         {label:"Tag (opcional)", key:"tag", placeholder:"Popular, Oferta, Hot, Nuevo"},
       ].map(f=>(
         <div key={f.key} style={{ marginBottom:10 }}>
-          <p style={{ color:"rgba(255,255,255,0.5)", fontSize:10, fontFamily:F, margin:"0 0 4px" }}>{f.label}</p>
+          <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 4px" }}>{f.label}</p>
           <input value={form[f.key]||""} onChange={e=>setForm(p=>({...p,[f.key]:e.target.value}))} placeholder={f.placeholder} style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:"#fff", fontSize:13, fontFamily:F, outline:"none" }}/>
         </div>
       ))}
       <div style={{ marginBottom:10 }}>
-        <p style={{ color:"rgba(255,255,255,0.5)", fontSize:10, fontFamily:F, margin:"0 0 4px" }}>Descripción <span style={{ color:"rgba(255,255,255,0.3)" }}>(opcional)</span></p>
+        <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 4px" }}>Descripción <span style={{ color:"rgba(255,255,255,0.3)" }}>(opcional)</span></p>
         <textarea value={form.description||""} onChange={e=>setForm(p=>({...p,description:e.target.value}))} placeholder="Describe el producto, plataformas compatibles, beneficios..." rows={3} style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:"#fff", fontSize:13, fontFamily:F, outline:"none", resize:"vertical" }}/>
       </div>
       <div style={{ marginBottom:10 }}>
-        <p style={{ color:"rgba(255,255,255,0.5)", fontSize:10, fontFamily:F, margin:"0 0 6px" }}>IMAGEN DEL PRODUCTO</p>
+        <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 6px" }}>IMAGEN DEL PRODUCTO</p>
         <div style={{ display:"flex", gap:10, alignItems:"center" }}>
           {form.img_url && <img src={form.img_url} style={{ width:60, height:44, objectFit:"cover", borderRadius:8, border:"1px solid rgba(255,255,255,0.15)", flexShrink:0 }}/>}
           <div style={{ flex:1 }}>
-            <label style={{ display:"block", padding:"10px 12px", background:"rgba(255,255,255,0.06)", border:"1px dashed rgba(255,255,255,0.25)", borderRadius:10, color:"rgba(255,255,255,0.6)", fontSize:12, fontFamily:F, cursor:"pointer", textAlign:"center" }}>
+            <label style={{ display:"block", padding:"10px 12px", background:"rgba(255,255,255,0.06)", border:"1px dashed rgba(255,255,255,0.25)", borderRadius:10, color:"#F0EDE8", fontSize:12, fontFamily:F, cursor:"pointer", textAlign:"center" }}>
               📷 {form.img_url ? "Cambiar imagen" : "Subir imagen"}
               <input type="file" accept="image/*" style={{ display:"none" }} onChange={e=>{ const file=e.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=ev=>setForm(p=>({...p,img_url:ev.target.result})); reader.readAsDataURL(file); }}/>
             </label>
@@ -1491,32 +1497,32 @@ function ProductFormPanel({ form, setForm, editing, saving, saveProduct, onCance
       </div>
       {form.amounts && form.amounts.split(",").map(a=>a.trim()).filter(a=>a.length>0).map(a => (
         <div key={`usdt_${a}`} style={{ marginBottom:10 }}>
-          <p style={{ color:"rgba(255,255,255,0.5)", fontSize:10, fontFamily:F, margin:"0 0 4px" }}>Precio USDT para <span style={{ color:"#F3BA2F" }}>{a}</span></p>
+          <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 4px" }}>Precio USDT para <span style={{ color:"#F3BA2F" }}>{a}</span></p>
           <input value={form[`usdt_${a}`]||""} onChange={e=>setForm(p=>({...p,[`usdt_${a}`]:e.target.value}))} placeholder="Precio en USDT" style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(243,186,47,0.3)", borderRadius:10, color:"#fff", fontSize:13, fontFamily:F, outline:"none" }}/>
         </div>
       ))}
       <div style={{ marginBottom:10 }}>
-        <p style={{ color:"rgba(255,255,255,0.5)", fontSize:10, fontFamily:F, margin:"0 0 6px" }}>Categoría <span style={{ color:"rgba(255,255,255,0.3)" }}>(máx. 2)</span></p>
+        <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 6px" }}>Categoría <span style={{ color:"rgba(255,255,255,0.3)" }}>(máx. 2)</span></p>
         <div style={{ display:"flex", gap:8 }}>
           {["Consola","PC","Mobile"].map(c => {
             const cats = Array.isArray(form.category) ? form.category : [form.category].filter(Boolean);
             const selected = cats.includes(c);
             return (
-              <button key={c} type="button" onClick={()=>{ const cur=Array.isArray(form.category)?form.category:[form.category].filter(Boolean); if(selected){setForm(p=>({...p,category:cur.filter(x=>x!==c)}));}else if(cur.length<2){setForm(p=>({...p,category:[...cur,c]}));} }} style={{ flex:1, padding:"9px 0", background:selected?"rgba(123,111,255,0.25)":"rgba(255,255,255,0.05)", border:`1px solid ${selected?"rgba(123,111,255,0.6)":"rgba(255,255,255,0.12)"}`, borderRadius:10, color:selected?"#A89FFF":"rgba(255,255,255,0.5)", fontSize:12, fontWeight:selected?700:400, fontFamily:F, cursor:"pointer" }}>{c}</button>
+              <button key={c} type="button" onClick={()=>{ const cur=Array.isArray(form.category)?form.category:[form.category].filter(Boolean); if(selected){setForm(p=>({...p,category:cur.filter(x=>x!==c)}));}else if(cur.length<2){setForm(p=>({...p,category:[...cur,c]}));} }} style={{ flex:1, padding:"9px 0", background:selected?"rgba(123,111,255,0.25)":"rgba(255,255,255,0.05)", border:`1px solid ${selected?"rgba(123,111,255,0.6)":"rgba(255,255,255,0.12)"}`, borderRadius:10, color:selected?"#A89FFF":"#F0EDE8", fontSize:12, fontWeight:selected?700:400, fontFamily:F, cursor:"pointer" }}>{c}</button>
             );
           })}
         </div>
         {(Array.isArray(form.category)?form.category:[form.category].filter(Boolean)).length===0 && <p style={{ color:"rgba(255,77,106,0.8)", fontSize:10, fontFamily:F, margin:"4px 0 0" }}>Selecciona al menos una categoría</p>}
       </div>
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
-        <p style={{ color:"rgba(255,255,255,0.5)", fontSize:10, fontFamily:F, margin:0 }}>Activo</p>
+        <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:0 }}>Activo</p>
         <button onClick={()=>setForm(p=>({...p,active:!p.active}))} style={{ width:40, height:22, borderRadius:11, background:form.active?"#7B6FFF":"rgba(255,255,255,0.12)", border:"none", cursor:"pointer", position:"relative", transition:"background 0.2s" }}>
           <span style={{ position:"absolute", top:3, left:form.active?20:3, width:16, height:16, borderRadius:"50%", background:"#fff", transition:"left 0.2s" }}/>
         </button>
       </div>
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
         <div style={{ flex:1 }}>
-          <p style={{ color:"rgba(255,255,255,0.5)", fontSize:10, fontFamily:F, margin:0 }}>⭐ Popular en la tienda</p>
+          <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:0 }}>⭐ Popular en la tienda</p>
           <p style={{ color:"rgba(255,255,255,0.3)", fontSize:9, fontFamily:F, margin:"2px 0 0" }}>Aparece en "Populares" (máx. 6)</p>
         </div>
         <button onClick={()=>setForm(p=>({...p,featured:!p.featured}))} style={{ width:40, height:22, borderRadius:11, background:form.featured?"#F3BA2F":"rgba(255,255,255,0.12)", border:"none", cursor:"pointer", position:"relative", transition:"background 0.2s", flexShrink:0 }}>
@@ -1525,7 +1531,7 @@ function ProductFormPanel({ form, setForm, editing, saving, saveProduct, onCance
       </div>
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
         <div style={{ flex:1 }}>
-          <p style={{ color:"rgba(255,255,255,0.5)", fontSize:10, fontFamily:F, margin:0 }}>Entrega manual</p>
+          <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:0 }}>Entrega manual</p>
           <p style={{ color:"rgba(255,255,255,0.3)", fontSize:9, fontFamily:F, margin:"2px 0 0" }}>El cliente verifica por WhatsApp</p>
         </div>
         <button onClick={()=>setForm(p=>({...p,manual_delivery:!p.manual_delivery}))} style={{ width:40, height:22, borderRadius:11, background:form.manual_delivery?"#25D366":"rgba(255,255,255,0.12)", border:"none", cursor:"pointer", position:"relative", transition:"background 0.2s", flexShrink:0 }}>
@@ -1533,7 +1539,7 @@ function ProductFormPanel({ form, setForm, editing, saving, saveProduct, onCance
         </button>
       </div>
       <div style={{ display:"flex", gap:8 }}>
-        <button onClick={onCancel} style={{ flex:1, padding:"10px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:"rgba(255,255,255,0.6)", fontSize:12, fontFamily:F, cursor:"pointer" }}>Cancelar</button>
+        <button onClick={onCancel} style={{ flex:1, padding:"10px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:"#F0EDE8", fontSize:12, fontFamily:F, cursor:"pointer" }}>Cancelar</button>
         <button disabled={saving||!form.name||!form.amounts} onClick={saveProduct} style={{ flex:2, padding:"10px", background:(!saving&&form.name&&form.amounts)?"linear-gradient(135deg,#7B6FFF,#4F8EFF)":"rgba(255,255,255,0.05)", border:"none", borderRadius:10, color:(!saving&&form.name&&form.amounts)?"#fff":"rgba(255,255,255,0.3)", fontSize:12, fontWeight:800, fontFamily:F, cursor:(!saving&&form.name&&form.amounts)?"pointer":"not-allowed" }}>
           {saving?"Guardando...":"💾 Guardar"}
         </button>
@@ -1623,7 +1629,7 @@ function AdminProducts() {
   return (
     <div style={{ padding:"16px" }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
-        <p style={{ color:"rgba(255,255,255,0.5)", fontSize:10, fontFamily:F, letterSpacing:"0.1em", fontWeight:700, margin:0 }}>PRODUCTOS ({products.length})</p>
+        <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, letterSpacing:"0.1em", fontWeight:700, margin:0 }}>PRODUCTOS ({products.length})</p>
         <button onClick={startAdd} style={{ background:"rgba(123,111,255,0.15)", border:"1px solid rgba(123,111,255,0.35)", borderRadius:10, color:"#7B6FFF", fontSize:12, fontFamily:F, fontWeight:700, padding:"7px 14px", cursor:"pointer" }}>+ Nuevo</button>
       </div>
       {showAdd && <ProductFormPanel form={form} setForm={setForm} editing={editing} saving={saving} saveProduct={saveProduct} onCancel={()=>{ setEditing(null); setShowAdd(false); }}/>}
@@ -1635,7 +1641,7 @@ function AdminProducts() {
               <img src={getImg(p)} style={{ width:50, height:36, objectFit:"cover", borderRadius:8, flexShrink:0 }}/>
               <div style={{ flex:1, minWidth:0 }}>
                 <p style={{ color:"#fff", fontSize:13, fontWeight:700, fontFamily:F, margin:"0 0 2px", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{p.name}</p>
-                <p style={{ color:"rgba(255,255,255,0.4)", fontSize:10, fontFamily:F, margin:0 }}>
+                <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:0 }}>
                   {(p.amounts||[]).join(", ")} · {Array.isArray(p.category)?p.category.join(", "):p.category}
                   {p.tag && <span style={{ color:"#F3BA2F", marginLeft:4 }}>· {p.tag}</span>}
                   {p.featured && <span style={{ color:"#F3BA2F", marginLeft:4 }}>· ⭐</span>}
@@ -1653,7 +1659,7 @@ function AdminProducts() {
                 </p>
               </div>
               <div style={{ display:"flex", flexDirection:"column", gap:5, alignItems:"flex-end" }}>
-                <button onClick={()=>startEdit(p)} style={{ background:"rgba(255,255,255,0.08)", border:"none", borderRadius:7, color:"rgba(255,255,255,0.7)", fontSize:11, fontFamily:F, padding:"4px 10px", cursor:"pointer" }}>✏️</button>
+                <button onClick={()=>startEdit(p)} style={{ background:"rgba(255,255,255,0.08)", border:"none", borderRadius:7, color:"#F0EDE8", fontSize:11, fontFamily:F, padding:"4px 10px", cursor:"pointer" }}>✏️</button>
                 <button onClick={()=>toggleActive(p)} style={{ background:p.active===false?"rgba(0,200,150,0.12)":"rgba(255,77,106,0.12)", border:"none", borderRadius:7, color:p.active===false?"#00C896":"#FF4D6A", fontSize:10, fontFamily:F, padding:"4px 8px", cursor:"pointer" }}>{p.active===false?"Activar":"Ocultar"}</button>
                 <button onClick={()=>deleteProduct(p)} style={{ background:"rgba(255,77,106,0.08)", border:"none", borderRadius:7, color:"#FF4D6A", fontSize:11, padding:"4px 8px", cursor:"pointer" }}>🗑</button>
               </div>
@@ -1685,25 +1691,25 @@ function BannerEditor() {
 
   return (
     <div style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:16, padding:"18px", marginBottom:16 }}>
-      <p style={{ color:"rgba(255,255,255,0.5)", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 12px" }}>BANNER DE INICIO</p>
+      <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 12px" }}>BANNER DE INICIO</p>
       <div style={{ marginBottom:10 }}>
-        <p style={{ color:"rgba(255,255,255,0.4)", fontSize:10, fontFamily:F, margin:"0 0 4px" }}>Etiqueta (ej: NEXUS IA DISPONIBLE)</p>
+        <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 4px" }}>Etiqueta (ej: NEXUS IA DISPONIBLE)</p>
         <input value={b.badge||""} onChange={e=>setB(p=>({...p,badge:e.target.value}))} style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:"#fff", fontSize:13, fontFamily:F, outline:"none" }}/>
       </div>
       <div style={{ marginBottom:10 }}>
-        <p style={{ color:"rgba(255,255,255,0.4)", fontSize:10, fontFamily:F, margin:"0 0 4px" }}>Título</p>
+        <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 4px" }}>Título</p>
         <input value={b.title} onChange={e=>setB(p=>({...p,title:e.target.value}))} style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:"#fff", fontSize:13, fontFamily:F, outline:"none" }}/>
       </div>
       <div style={{ marginBottom:10 }}>
-        <p style={{ color:"rgba(255,255,255,0.4)", fontSize:10, fontFamily:F, margin:"0 0 4px" }}>Subtítulo</p>
+        <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 4px" }}>Subtítulo</p>
         <input value={b.subtitle} onChange={e=>setB(p=>({...p,subtitle:e.target.value}))} style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:"#fff", fontSize:13, fontFamily:F, outline:"none" }}/>
       </div>
       <div style={{ marginBottom:14 }}>
-        <p style={{ color:"rgba(255,255,255,0.4)", fontSize:10, fontFamily:F, margin:"0 0 4px" }}>Texto del botón</p>
+        <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 4px" }}>Texto del botón</p>
         <input value={b.btn} onChange={e=>setB(p=>({...p,btn:e.target.value}))} style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:"#fff", fontSize:13, fontFamily:F, outline:"none" }}/>
       </div>
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
-        <p style={{ color:"rgba(255,255,255,0.5)", fontSize:10, fontFamily:F, margin:0 }}>Mostrar banner</p>
+        <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:0 }}>Mostrar banner</p>
         <button onClick={()=>setB(p=>({...p,visible:!p.visible}))} style={{ width:40, height:22, borderRadius:11, background:b.visible?"#7B6FFF":"rgba(255,255,255,0.12)", border:"none", cursor:"pointer", position:"relative" }}>
           <span style={{ position:"absolute", top:3, left:b.visible?20:3, width:16, height:16, borderRadius:"50%", background:"#fff", transition:"left 0.2s" }}/>
         </button>
@@ -1734,9 +1740,9 @@ function AdminSettings() {
   return (
     <div style={{ padding:"20px 16px" }}>
       <div style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:16, padding:"18px", marginBottom:16 }}>
-        <p style={{ color:"rgba(255,255,255,0.5)", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 4px" }}>TASA DEL DÓLAR</p>
+        <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 4px" }}>TASA DEL DÓLAR</p>
         <p style={{ color:"rgba(255,255,255,0.3)", fontSize:12, fontFamily:F, margin:"0 0 14px" }}>Los precios de la tienda se actualizan al instante.</p>
-        <p style={{ color:"rgba(255,255,255,0.5)", fontSize:10, fontFamily:F, margin:"0 0 6px" }}>Tasa actual: <span style={{ color:"#F3BA2F", fontWeight:700 }}>Bs. {tasa}</span></p>
+        <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 6px" }}>Tasa actual: <span style={{ color:"#F3BA2F", fontWeight:700 }}>Bs. {tasa}</span></p>
         <div style={{ display:"flex", gap:10 }}>
           <input
             value={tasaInput}
@@ -1758,15 +1764,15 @@ function AdminSettings() {
       <BannerEditor/>
 
       <div style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:16, padding:"18px" }}>
-        <p style={{ color:"rgba(255,255,255,0.5)", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 10px" }}>INFO DE PAGOS</p>
+        <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 10px" }}>INFO DE PAGOS</p>
         {[
           {label:"📱 Pago Móvil", items:["0424-3663119","CI: 28.236.056","Mercantil"]},
           {label:"🟡 Binance Pay", items:["ID: 62569716"]},
           {label:"💜 Zinli", items:["Gil751630@gmail.com"]},
         ].map((m,i)=>(
           <div key={i} style={{ marginBottom:10, padding:"10px 12px", background:"rgba(255,255,255,0.03)", borderRadius:10 }}>
-            <p style={{ color:"rgba(255,255,255,0.7)", fontSize:12, fontFamily:F, fontWeight:700, margin:"0 0 4px" }}>{m.label}</p>
-            {m.items.map((item,j)=><p key={j} style={{ color:"rgba(255,255,255,0.4)", fontSize:11, fontFamily:F, margin:0 }}>{item}</p>)}
+            <p style={{ color:"#F0EDE8", fontSize:12, fontFamily:F, fontWeight:700, margin:"0 0 4px" }}>{m.label}</p>
+            {m.items.map((item,j)=><p key={j} style={{ color:"#F0EDE8", fontSize:11, fontFamily:F, margin:0 }}>{item}</p>)}
           </div>
         ))}
       </div>
@@ -1787,7 +1793,7 @@ function AdminLogin({ onSuccess }) {
     <div style={{ minHeight:"100vh", background:"#0A0A14", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"32px 24px" }}>
       <div style={{ width:56, height:56, borderRadius:16, background:"rgba(123,111,255,0.15)", border:"1px solid rgba(123,111,255,0.3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, marginBottom:20 }}>🔐</div>
       <h2 style={{ color:"#fff", fontSize:20, fontWeight:800, fontFamily:F, margin:"0 0 6px" }}>Panel Admin</h2>
-      <p style={{ color:"rgba(255,255,255,0.4)", fontSize:13, fontFamily:F, margin:"0 0 28px" }}>Start Game</p>
+      <p style={{ color:"#F0EDE8", fontSize:13, fontFamily:F, margin:"0 0 28px" }}>Start Game</p>
       <div style={{ width:"100%", maxWidth:300 }}>
         <input
           type="password"
@@ -1913,14 +1919,14 @@ export default function App() {
         <div style={{ position:"absolute", bottom:150, left:30, width:220, height:220, borderRadius:"50%", background:"rgba(255,255,255,0.04)", filter:"blur(60px)" }}/>
       </div>
       <div ref={mainScrollRef} data-main-scroll style={{ position:"fixed", top:0, left:0, right:0, bottom:0, zIndex:1, overflowY:screen!=="nexus"?"auto":"hidden", paddingBottom:screen!=="nexus"?100:0 }}>
-        {screen==="home"    && <HomeScreen setScreen={setScreen} onLogoTap={tapLogo} onAddToCart={addToCart} cart={cart} onCartClick={()=>setCartOpen(true)}/>}
-        {screen==="store"   && <StoreScreen onAddToCart={addToCart} cart={cart} onCartClick={()=>setCartOpen(true)}/>}
+        {screen==="home"    && <HomeScreen setScreen={setScreen} onLogoTap={tapLogo} onAddToCart={addToCart} onBuyNow={()=>{ setCartOpen(false); setCheckoutOpen(true); }} cart={cart} onCartClick={()=>setCartOpen(true)}/>}
+        {screen==="store"   && <StoreScreen onAddToCart={addToCart} onBuyNow={()=>{ setCartOpen(false); setCheckoutOpen(true); }} cart={cart} onCartClick={()=>setCartOpen(true)}/>}
         {screen==="nexus"   && <NexusScreen/>}
         {screen==="profile" && <ProfileScreen profilePhoto={profilePhoto} setProfilePhoto={setProfilePhoto} session={session} setSession={setSession}/>}
       </div>
       {screen!=="nexus" && <BottomNav active={screen} setActive={setScreen} profilePhoto={profilePhoto} onProfilePhotoChange={setProfilePhoto} cartCount={cartCount} onCartClick={()=>setCartOpen(true)}/>}
       {screen==="nexus" && (
-        <button onClick={()=>setScreen("home")} style={{ position:"fixed", bottom:80, left:16, zIndex:999, background:"rgba(10,10,20,0.55)", backdropFilter:"blur(12px)", border:"1px solid rgba(255,255,255,0.15)", borderRadius:20, color:"rgba(255,255,255,0.7)", cursor:"pointer", fontSize:12, fontFamily:F, padding:"8px 16px", fontWeight:700 }}>← Volver</button>
+        <button onClick={()=>setScreen("home")} style={{ position:"fixed", bottom:80, left:16, zIndex:999, background:"rgba(10,10,20,0.55)", backdropFilter:"blur(12px)", border:"1px solid rgba(255,255,255,0.15)", borderRadius:20, color:"#F0EDE8", cursor:"pointer", fontSize:12, fontFamily:F, padding:"8px 16px", fontWeight:700 }}>← Volver</button>
       )}
       {cartOpen && <CartPanel cart={cart} onClose={()=>setCartOpen(false)} onRemove={removeFromCart} onUpdateQty={updateQty} onCheckout={()=>{ setCartOpen(false); setCheckoutOpen(true); }}/>}
       {checkoutOpen && (
