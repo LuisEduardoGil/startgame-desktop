@@ -1347,6 +1347,12 @@ function AdminOrders() {
   };
   const handleDeliver = async () => {
     if (!selected) return;
+    const _items = selected.items || [];
+    const _allFilled = _items.every((_, i) => (giftCodes[i]||"").trim());
+    if (!_allFilled) return;
+    const giftCodeValue = _items.length > 1
+      ? JSON.stringify(_items.map((item, i) => ({ name: item.name, amount: item.amount, code: giftCodes[i].trim() })))
+      : giftCodes[0].trim();
     setSending(true);
     await sb.update("orders", selected.id, { status:"delivered", gift_code: giftCodeValue });
     // Send email via EmailJS if customer has email
