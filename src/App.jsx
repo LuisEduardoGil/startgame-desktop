@@ -1346,16 +1346,16 @@ function AdminOrders() {
     load();
   };
   const handleDeliver = async () => {
-    if (!giftCode.trim() || !selected) return;
+    if (!selected) return;
     setSending(true);
-    await sb.update("orders", selected.id, { status:"delivered", gift_code:giftCode.trim() });
+    await sb.update("orders", selected.id, { status:"delivered", gift_code: giftCodeValue });
     // Send email via EmailJS if customer has email
     if (selected.customer_email) {
       try {
         await sendGiftEmail({
           to_email: selected.customer_email,
           order_id: selected.id,
-          gift_code: giftCode.trim(),
+          gift_code: giftCodes[0]?.trim() || "",
           items: selected.items,
           total: selected.total,
           payment_method: selected.payment_method,
@@ -1399,7 +1399,7 @@ function AdminOrders() {
   });
 
   const OrderCard = ({ order }) => (
-    <div key={order.id} onClick={()=>{ setSelected(s => s?.id===order.id ? null : order); setGiftCode(""); }}
+    <div key={order.id} onClick={()=>{ setSelected(s => s?.id===order.id ? null : order); setGiftCodes({}); }}
       style={{ background:selected?.id===order.id?"rgba(123,111,255,0.10)":"rgba(255,255,255,0.03)", border:`1px solid ${selected?.id===order.id?"rgba(123,111,255,0.4)":"rgba(255,255,255,0.07)"}`, borderRadius:14, padding:"13px", marginBottom:6, cursor:"pointer", width:"100%", boxSizing:"border-box" }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:6 }}>
         <div>
