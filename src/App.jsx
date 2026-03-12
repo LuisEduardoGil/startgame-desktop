@@ -1812,6 +1812,15 @@ function AdminLogin({ onSuccess }) {
   );
 }
 
+
+// Deep link: convierte nombre a slug y viceversa
+function toSlug(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+function findProductBySlug(slug) {
+  return GLOBAL_PRODUCTS.find(p => toSlug(p.name) === slug) || null;
+}
+
 export default function App() {
   const [screen, setScreen_] = useState("home");
   const setScreen = (s) => { setScreen_(s); setTimeout(()=>{ if(mainScrollRef.current) mainScrollRef.current.scrollTop=0; },0); };
@@ -1828,6 +1837,7 @@ export default function App() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [orderId, setOrderId] = useState(null);
   const [adminMode, setAdminMode] = useState(false);
+  const [deepLinkCard, setDeepLinkCard] = useState(null);
   const [adminAuth, setAdminAuth] = useState(false);
   const [appReady, setAppReady] = useState(false);
 
@@ -1849,6 +1859,12 @@ export default function App() {
       setAppReady(true);
       document.body.style.overflow = "";
       if(mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
+      // Deep link: check URL hash for product slug
+      const hashSlug = window.location.hash.replace(/^#\/?/, "");
+      if (hashSlug && hashSlug !== "/") {
+        const found = findProductBySlug(hashSlug);
+        if (found) setDeepLinkCard(found);
+      }
     });
     document.body.style.overflow = "hidden";
   }, []);
@@ -1919,9 +1935,10 @@ export default function App() {
         <div style={{ position:"absolute", bottom:150, left:30, width:220, height:220, borderRadius:"50%", background:"rgba(255,255,255,0.04)", filter:"blur(60px)" }}/>
       </div>
       <div ref={mainScrollRef} data-main-scroll style={{ position:"fixed", top:0, left:0, right:0, bottom:0, zIndex:1, overflowY:screen!=="nexus"?"auto":"hidden", paddingBottom:screen!=="nexus"?100:0 }}>
-        {screen==="home"    && <HomeScreen setScreen={setScreen} onLogoTap={tapLogo} onAddToCart={addToCart} onBuyNow={()=>{ setCartOpen(false); setCheckoutOpen(true); }} cart={cart} onCartClick={()=>setCartOpen(true)}/>}
-        {screen==="store"   && <StoreScreen onAddToCart={addToCart} onBuyNow={()=>{ setCartOpen(false); setCheckoutOpen(true); }} cart={cart} onCartClick={()=>setCartOpen(true)}/>}
-        {screen==="nexus"   && <NexusScreen/>}
+        {deepLinkCard && <CardDetailScreen card={deepLinkCard} onBack={()=>{ setDeepLinkCard(null); window.location.hash = ""; }} onAddToCart={addToCart} onBuyNow={()=>{ setDeepLinkCard(null); window.location.hash = ""; setCartOpen(false); setCheckoutOpen(true); }} cart={cart} onCartClick={()=>setCartOpen(true)} tasa={GLOBAL_TASA}/>}
+        {!deepLinkCard && screen==="home"    && <HomeScreen setScreen={setScreen} onLogoTap={tapLogo} onAddToCart={addToCart} onBuyNow={()=>{ setCartOpen(false); setCheckoutOpen(true); }} cart={cart} onCartClick={()=>setCartOpen(true)}/>}
+        {!deepLinkCard && screen==="store"   && <StoreScreen onAddToCart={addToCart} onBuyNow={()=>{ setCartOpen(false); setCheckoutOpen(true); }} cart={cart} onCartClick={()=>setCartOpen(true)}/>}
+        {!deepLinkCard && screen==="nexus"   && <NexusScreen/>}
         {screen==="profile" && <ProfileScreen profilePhoto={profilePhoto} setProfilePhoto={setProfilePhoto} session={session} setSession={setSession}/>}
       </div>
       {screen!=="nexus" && <BottomNav active={screen} setActive={setScreen} profilePhoto={profilePhoto} onProfilePhotoChange={setProfilePhoto} cartCount={cartCount} onCartClick={()=>setCartOpen(true)}/>}
