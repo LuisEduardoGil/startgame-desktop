@@ -1915,14 +1915,22 @@ export default function App() {
 
   // Admin mode overlay
   if (adminMode) {
-    if (!adminAuth) return <AdminLogin onSuccess={()=>setAdminAuth(true)}/>;
-    return <AdminPanel onExit={()=>{ setAdminMode(false); setAdminAuth(false); }}/>;
+    if (!adminAuth) return (
+      <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:COLORS.bg, overflowY:"auto", zIndex:1, fontFamily:F, color:COLORS.text }}>
+        <AdminLogin onSuccess={()=>setAdminAuth(true)}/>
+      </div>
+    );
+    return (
+      <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:COLORS.bg, overflowY:"auto", zIndex:1, fontFamily:F, color:COLORS.text }}>
+        <AdminPanel onExit={()=>{ setAdminMode(false); setAdminAuth(false); }}/>
+      </div>
+    );
   }
 
   // Order status screen
   if (orderId) {
     return (
-      <div style={{ background:COLORS.bg, minHeight:"100vh", width:"100%", fontFamily:F, color:COLORS.text }}>
+      <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:COLORS.bg, overflowY:"auto", zIndex:1, fontFamily:F, color:COLORS.text }}>
         <OrderStatusScreen orderId={orderId} onBack={()=>{ setOrderId(null); setCheckoutOpen(false); setCart([]); setScreen("home"); }} onOrderDelivered={()=>{ setCart([]); }}/>
       </div>
     );
@@ -1948,7 +1956,7 @@ export default function App() {
       )}
       {cartOpen && <CartPanel cart={cart} onClose={()=>setCartOpen(false)} onRemove={removeFromCart} onUpdateQty={updateQty} onCheckout={()=>{ setCartOpen(false); setCheckoutOpen(true); }}/>}
       {checkoutOpen && (
-        <div style={{ position:"fixed", inset:0, zIndex:400, background:COLORS.bg, overflowY:"auto" }}>
+        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, zIndex:400, background:COLORS.bg, overflowY:"auto", width:"100%" }}>
           <CheckoutScreen cart={cart} onBack={()=>setCheckoutOpen(false)} onOrderCreated={(id)=>{ setOrderId(id); setCheckoutOpen(false); }} session={session}/>
         </div>
       )}
