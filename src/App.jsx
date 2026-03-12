@@ -879,7 +879,6 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
   const [guestEmail, setGuestEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [paypalContainer, setPaypalContainer] = useState(false);
   const paypalRef = useRef(null);
   const paypalRendered = useRef(false);
   const isGuest = !session?.user?.email;
@@ -898,17 +897,17 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail);
   const canSubmit = method && method !== "paypal" && ref.trim().length >= 3 && !loading && (!isGuest || isValidEmail);
 
-  // Render PayPal buttons when method === paypal and SDK ready
-  useEffect(() => {
-    if (method !== "paypal" || !paypalSdkReady || !paypalRef.current) return;
-    if (paypalRendered.current) return;
+  // Callback ref — renders PayPal buttons as soon as the div mounts
+  const initPaypal = (node) => {
+    if (!node || !paypalSdkReady || paypalRendered.current) return;
+    paypalRef.current = node;
     paypalRendered.current = true;
     window.paypal.Buttons({
       style: { layout:"vertical", color:"blue", shape:"rect", label:"pay", height:48 },
-      createOrder: (data, actions) => actions.order.create({
+      createOrder: (_data, actions) => actions.order.create({
         purchase_units: [{ amount: { value: String(paypalTotal), currency_code:"USD" }, description: cart.map(i=>`${i.name} ${i.selectedAmount}x${i.quantity}`).join(", ") }]
       }),
-      onApprove: async (data, actions) => {
+      onApprove: async (_data, actions) => {
         setLoading(true);
         try {
           const details = await actions.order.capture();
@@ -933,8 +932,8 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
         setLoading(false);
       },
       onError: (err) => { setError("Error de PayPal. Intenta de nuevo."); console.error(err); }
-    }).render(paypalRef.current);
-  }, [method, paypalSdkReady]);
+    }).render(node);
+  };
 
   // Reset paypal on method change
   useEffect(() => {
@@ -1095,7 +1094,7 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
             )}
             {(!isGuest || isValidEmail) && (
               paypalSdkReady
-                ? <div ref={paypalRef} style={{ borderRadius:12, overflow:"hidden" }}/>
+                ? <div ref={initPaypal} style={{ borderRadius:12, overflow:"hidden", minHeight:50 }}/>
                 : <div style={{ background:"rgba(255,255,255,0.04)", borderRadius:12, padding:"20px", textAlign:"center" }}>
                     <p style={{ color:COLORS.textMuted, fontSize:12, fontFamily:F, margin:0 }}>Cargando PayPal...</p>
                   </div>
