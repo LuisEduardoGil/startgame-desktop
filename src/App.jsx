@@ -903,7 +903,7 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
     paypalRef.current = node;
     paypalRendered.current = true;
     window.paypal.Buttons({
-      style: { layout:"vertical", color:"blue", shape:"rect", label:"pay", height:48 },
+      style: { layout:"vertical", color:"black", shape:"pill", label:"pay", height:50 },
       createOrder: (_data, actions) => actions.order.create({
         purchase_units: [{ amount: { value: String(paypalTotal), currency_code:"USD" }, description: cart.map(i=>`${i.name} ${i.selectedAmount}x${i.quantity}`).join(", ") }]
       }),
@@ -1094,7 +1094,19 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
             )}
             {(!isGuest || isValidEmail) && (
               paypalSdkReady
-                ? <div ref={initPaypal} style={{ borderRadius:12, overflow:"hidden", minHeight:50 }}/>
+                ? (
+                    <div>
+                      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
+                        <div style={{ flex:1, height:1, background:"rgba(255,255,255,0.08)" }}/>
+                        <span style={{ color:"rgba(255,255,255,0.25)", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em" }}>PAGAR CON</span>
+                        <div style={{ flex:1, height:1, background:"rgba(255,255,255,0.08)" }}/>
+                      </div>
+                      <div ref={initPaypal} style={{ borderRadius:50, overflow:"hidden", minHeight:50 }}/>
+                      <p style={{ color:"rgba(255,255,255,0.2)", fontSize:9, fontFamily:F, textAlign:"center", marginTop:10 }}>
+                        Al continuar aceptas los términos de PayPal
+                      </p>
+                    </div>
+                  )
                 : <div style={{ background:"rgba(255,255,255,0.04)", borderRadius:12, padding:"20px", textAlign:"center" }}>
                     <p style={{ color:COLORS.textMuted, fontSize:12, fontFamily:F, margin:0 }}>Cargando PayPal...</p>
                   </div>
