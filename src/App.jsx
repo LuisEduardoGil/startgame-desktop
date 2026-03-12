@@ -794,9 +794,12 @@ function CartPanel({ cart, onClose, onRemove, onUpdateQty, onCheckout }) {
                 <img src={getImg(item)} style={{ width:64, height:48, objectFit:"cover", borderRadius:10, flexShrink:0 }}/>
                 <div style={{ flex:1, minWidth:0 }}>
                   <p style={{ color:COLORS.text, fontWeight:700, fontSize:13, margin:"0 0 4px", fontFamily:F, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{item.name}</p>
-                  {(() => { const usdt = getUsdt(item, rawAmt); return usdt
-                    ? <p style={{ color:"rgba(180,180,255,0.9)", fontWeight:700, fontSize:12, margin:0, fontFamily:F }}>{isNumAmt ? `$${val} USD` : rawAmt}</p>
-                    : <p style={{ color:"rgba(180,180,255,0.9)", fontWeight:700, fontSize:12, margin:0, fontFamily:F }}>{isNumAmt ? `$${val} USD` : rawAmt}</p>; })()}
+                  {(() => {
+                    const usdt = getUsdt(item, rawAmt);
+                    const isPureNum = !isNaN(val) && !/[a-zA-Z]/.test(rawAmt);
+                    const label = isPureNum ? `$${val} USD` : rawAmt;
+                    return <p style={{ color:"rgba(180,180,255,0.9)", fontWeight:700, fontSize:12, margin:0, fontFamily:F }}>{label}</p>;
+                  })()}
                 </div>
                 <div style={{ display:"flex", alignItems:"center", background:"rgba(255,255,255,0.08)", border:"1px solid rgba(255,255,255,0.15)", borderRadius:8, overflow:"hidden", flexShrink:0 }}>
                   <button onClick={()=>item.quantity===1?onRemove(i):onUpdateQty(i,item.quantity-1)} style={{ width:28, height:28, background:"none", border:"none", color:COLORS.text, fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>−</button>
