@@ -1228,12 +1228,29 @@ function OrderStatusScreen({ orderId, onBack }) {
                     })}
                   </div>
                 )}
-                {/* Code card */}
-                <div style={{ background:"rgba(0,200,150,0.08)", border:"1px solid rgba(0,200,150,0.35)", borderRadius:16, padding:"20px", textAlign:"center" }}>
-                  <p style={{ color:"rgba(0,200,150,1)", fontSize:11, fontFamily:F, fontWeight:700, letterSpacing:"0.12em", margin:"0 0 10px" }}>TU CÓDIGO</p>
-                  <p style={{ color:COLORS.text, fontSize:22, fontWeight:900, fontFamily:F, margin:"0 0 12px", letterSpacing:"0.08em" }}>{order.gift_code}</p>
-                  <button onClick={()=>navigator.clipboard?.writeText(order.gift_code)} style={{ background:"rgba(255,255,255,0.10)", border:"1px solid rgba(255,255,255,0.20)", borderRadius:10, color:COLORS.text, fontSize:12, fontFamily:F, fontWeight:700, padding:"8px 20px", cursor:"pointer" }}>📋 Copiar código</button>
-                </div>
+                {/* Code card - supports single or multiple codes */}
+                {(() => {
+                  let codes = [];
+                  try { codes = JSON.parse(order.gift_code); } catch(e) { codes = null; }
+                  if (Array.isArray(codes)) {
+                    // Multiple codes
+                    return codes.map((entry, i) => (
+                      <div key={i} style={{ background:"rgba(0,200,150,0.08)", border:"1px solid rgba(0,200,150,0.35)", borderRadius:16, padding:"20px", textAlign:"center", marginBottom: i < codes.length-1 ? 10 : 0 }}>
+                        <p style={{ color:"rgba(0,200,150,1)", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.12em", margin:"0 0 4px" }}>{entry.name} — {entry.amount}</p>
+                        <p style={{ color:COLORS.text, fontSize:20, fontWeight:900, fontFamily:F, margin:"0 0 12px", letterSpacing:"0.08em" }}>{entry.code}</p>
+                        <button onClick={()=>navigator.clipboard?.writeText(entry.code)} style={{ background:"rgba(255,255,255,0.10)", border:"1px solid rgba(255,255,255,0.20)", borderRadius:10, color:COLORS.text, fontSize:12, fontFamily:F, fontWeight:700, padding:"8px 20px", cursor:"pointer" }}>📋 Copiar código</button>
+                      </div>
+                    ));
+                  }
+                  // Single code (legacy)
+                  return (
+                    <div style={{ background:"rgba(0,200,150,0.08)", border:"1px solid rgba(0,200,150,0.35)", borderRadius:16, padding:"20px", textAlign:"center" }}>
+                      <p style={{ color:"rgba(0,200,150,1)", fontSize:11, fontFamily:F, fontWeight:700, letterSpacing:"0.12em", margin:"0 0 10px" }}>TU CÓDIGO</p>
+                      <p style={{ color:COLORS.text, fontSize:22, fontWeight:900, fontFamily:F, margin:"0 0 12px", letterSpacing:"0.08em" }}>{order.gift_code}</p>
+                      <button onClick={()=>navigator.clipboard?.writeText(order.gift_code)} style={{ background:"rgba(255,255,255,0.10)", border:"1px solid rgba(255,255,255,0.20)", borderRadius:10, color:COLORS.text, fontSize:12, fontFamily:F, fontWeight:700, padding:"8px 20px", cursor:"pointer" }}>📋 Copiar código</button>
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
@@ -1283,7 +1300,7 @@ function AdminPanel({ onExit }) {
 }
 
 /* ── Admin: Orders Tab ── */
-function GiftInput({ value, onChange }) {
+function GiftInput({ value, onChange, placeholder }) {
   return (
     <input
       value={value}
@@ -1291,7 +1308,7 @@ function GiftInput({ value, onChange }) {
       onClick={e=>e.stopPropagation()}
       onFocus={e=>e.stopPropagation()}
       onMouseDown={e=>e.stopPropagation()}
-      placeholder="Código gift card..."
+      placeholder={placeholder||"Código gift card..."}
       style={{ width:"100%", boxSizing:"border-box", padding:"11px 14px", background:"rgba(255,255,255,0.05)", border:"1px solid rgba(0,200,150,0.4)", borderRadius:10, color:"#fff", fontSize:13, fontFamily:F, outline:"none", marginBottom:8 }}
     />
   );
@@ -1301,7 +1318,7 @@ function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
-  const [giftCode, setGiftCode] = useState("");
+  const [giftCodes, setGiftCodes] = useState({}); // { itemIndex: code }
   const [sending, setSending] = useState(false);
   const [collapsedDays, setCollapsedDays] = useState({});
   const [collapsedDelivered, setCollapsedDelivered] = useState({});
@@ -1325,6 +1342,7 @@ function AdminOrders() {
     await sb.update("orders", selected.id, { status:"delivered", gift_code:"Entregado por WhatsApp" });
     setSending(false);
     setSelected(null);
+    setGiftCodes({});
     load();
   };
   const handleDeliver = async () => {
@@ -1344,7 +1362,7 @@ function AdminOrders() {
         });
       } catch(e) { console.error("EmailJS error:", e); }
     }
-    setSelected(null); setGiftCode(""); setSending(false); load();
+    setSelected(null); setGiftCodes({}); setSending(false); load();
   };
 
   const SL = { pending:"⏳ Pendiente", verified:"🔍 Verificado", delivered:"✅ Entregado" };
@@ -1415,8 +1433,20 @@ function AdminOrders() {
           )}
           {order.status==="verified" && (
             <div onClick={e=>e.stopPropagation()}>
-              <GiftInput value={giftCode} onChange={e=>setGiftCode(e.target.value)}/>
-              <button disabled={!giftCode.trim()||sending} onClick={handleDeliver} style={{ width:"100%", padding:"10px", background:giftCode.trim()?"linear-gradient(135deg,#00C896,#00A878)":"rgba(255,255,255,0.04)", border:"none", borderRadius:10, color:giftCode.trim()?"#fff":"rgba(255,255,255,0.25)", fontSize:13, fontWeight:800, fontFamily:F, cursor:giftCode.trim()?"pointer":"not-allowed", marginBottom:8 }}>
+              {(order.items||[]).map((item, i) => (
+                <div key={i} style={{ marginBottom:8 }}>
+                  {order.items.length > 1 && <p style={{ color:"rgba(0,200,150,0.8)", fontSize:10, fontFamily:F, fontWeight:700, margin:"0 0 4px" }}>{item.name} — {item.amount}</p>}
+                  <GiftInput
+                    value={giftCodes[i]||""}
+                    onChange={e=>setGiftCodes(prev=>({...prev,[i]:e.target.value}))}
+                    placeholder={order.items.length > 1 ? `Código para ${item.name}...` : "Código gift card..."}
+                  />
+                </div>
+              ))}
+              <button
+                disabled={!(order.items||[]).every((_,i)=>(giftCodes[i]||"").trim())||sending}
+                onClick={handleDeliver}
+                style={{ width:"100%", padding:"10px", background:(order.items||[]).every((_,i)=>(giftCodes[i]||"").trim())?"linear-gradient(135deg,#00C896,#00A878)":"rgba(255,255,255,0.04)", border:"none", borderRadius:10, color:(order.items||[]).every((_,i)=>(giftCodes[i]||"").trim())?"#fff":"rgba(255,255,255,0.25)", fontSize:13, fontWeight:800, fontFamily:F, cursor:(order.items||[]).every((_,i)=>(giftCodes[i]||"").trim())?"pointer":"not-allowed", marginBottom:8 }}>
                 {sending?"Enviando...":"✅ Entregar código"}
               </button>
               <button disabled={sending} onClick={e=>{ e.stopPropagation(); if(window.confirm("¿Estás seguro que deseas marcar entrega por WhatsApp?")) handleDeliverWS(); }} style={{ width:"100%", padding:"10px", background:"linear-gradient(135deg,#25D366,#1da851)", border:"none", borderRadius:10, color:"#fff", fontSize:13, fontWeight:800, fontFamily:F, cursor:"pointer" }}>
