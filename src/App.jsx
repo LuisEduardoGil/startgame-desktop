@@ -772,7 +772,7 @@ function CartPanel({ cart, onClose, onRemove, onUpdateQty, onCheckout }) {
   const tasa = useTasa();
   const total = cart.reduce((sum, item) => { const val = parseFloat(item.selectedAmount.replace("$","")); return sum + (!isNaN(val) ? val * item.quantity : 0); }, 0);
   const totalUsdt = cart.reduce((sum, item) => { const r=item.selectedAmount.replace("$","").trim(); const u=getUsdt(item,r); return sum+(u?parseFloat(u)*item.quantity:0); }, 0);
-  const useUsdt = totalUsdt > 0;
+  const useUsdt = cart.some(i => getUsdt(i, i.selectedAmount.replace("$","").trim()));
   return (
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.65)", zIndex:300, backdropFilter:"blur(4px)" }}/>
