@@ -274,6 +274,20 @@ function useMethods() {
   return methods;
 }
 
+// PayPal SDK loader
+function usePayPalSDK() {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    if (document.getElementById("paypal-sdk")) { setReady(true); return; }
+    const script = document.createElement("script");
+    script.id = "paypal-sdk";
+    script.src = `https://www.paypal.com/sdk/js?client-id=ATk-sRl1JJEb_SO198JP2p0U7kd2yhdsl-cei_qq7XL1MJH5QYfkVC_W1Cm3ARPPZuQZNW_-tRYBT94X&currency=USD&intent=capture`;
+    script.onload = () => setReady(true);
+    document.body.appendChild(script);
+  }, []);
+  return ready;
+}
+
 function getImg(p) {
   if (p.img_url) return p.img_url;
   if (p.name && LOCAL_IMGS[p.name]) return LOCAL_IMGS[p.name];
@@ -865,18 +879,67 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
   const [guestEmail, setGuestEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [paypalContainer, setPaypalContainer] = useState(false);
+  const paypalRef = useRef(null);
+  const paypalRendered = useRef(false);
   const isGuest = !session?.user?.email;
   const customerEmail = isGuest ? guestEmail.trim() : session.user.email;
   const tasa = useTasa();
   const total = cart.reduce((s, i) => s + parseFloat(i.selectedAmount.replace("$","")) * i.quantity, 0);
   const totalUsdt = cart.reduce((s, i) => { const r=i.selectedAmount.replace("$","").trim(); const u=getUsdt(i,r); const n=parseFloat(r); return s+(u?parseFloat(u)*i.quantity:(!isNaN(n)?n*i.quantity:0)); }, 0);
   const useUsdt = cart.some(i => getUsdt(i, i.selectedAmount.replace("$","").trim()));
+  const paypalSdkReady = usePayPalSDK();
+
+  // PayPal amount with fee: (amount + 0.49) / (1 - 0.0349)
+  const paypalTotal = parseFloat(((totalUsdt + 0.49) / (1 - 0.0349)).toFixed(2));
 
   const METHODS = useMethods();
-
   const selected = METHODS.find(m => m.id === method);
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail);
-  const canSubmit = method && ref.trim().length >= 3 && !loading && (!isGuest || isValidEmail);
+  const canSubmit = method && method !== "paypal" && ref.trim().length >= 3 && !loading && (!isGuest || isValidEmail);
+
+  // Render PayPal buttons when method === paypal and SDK ready
+  useEffect(() => {
+    if (method !== "paypal" || !paypalSdkReady || !paypalRef.current) return;
+    if (paypalRendered.current) return;
+    paypalRendered.current = true;
+    window.paypal.Buttons({
+      style: { layout:"vertical", color:"blue", shape:"rect", label:"pay", height:48 },
+      createOrder: (data, actions) => actions.order.create({
+        purchase_units: [{ amount: { value: String(paypalTotal), currency_code:"USD" }, description: cart.map(i=>`${i.name} ${i.selectedAmount}x${i.quantity}`).join(", ") }]
+      }),
+      onApprove: async (data, actions) => {
+        setLoading(true);
+        try {
+          const details = await actions.order.capture();
+          const txId = details.id;
+          const email = details.payer?.email_address || customerEmail;
+          const isManual = cart.some(i => i.manual_delivery);
+          const totalBs = parseFloat((totalUsdt * tasa).toFixed(2));
+          const result = await sb.insert("orders", {
+            customer_ref: txId,
+            customer_email: email,
+            payment_method: "paypal",
+            items: cart.map(i => ({ name: i.name, amount: i.selectedAmount, quantity: i.quantity })),
+            total: paypalTotal,
+            total_bs: totalBs,
+            total_usdt: parseFloat(totalUsdt.toFixed(2)),
+            status: "verified",
+            manual_delivery: isManual
+          });
+          if (result && result[0]?.id) onOrderCreated(result[0].id);
+          else setError("Error al crear el pedido. Contacta soporte con tu ID: " + txId);
+        } catch(e) { setError("Error al procesar: " + e.message); }
+        setLoading(false);
+      },
+      onError: (err) => { setError("Error de PayPal. Intenta de nuevo."); console.error(err); }
+    }).render(paypalRef.current);
+  }, [method, paypalSdkReady]);
+
+  // Reset paypal on method change
+  useEffect(() => {
+    paypalRendered.current = false;
+  }, [method]);
 
   const handleConfirm = async () => {
     if (!canSubmit) return;
@@ -979,7 +1042,7 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
           ))}
         </div>
 
-        {selected && (
+        {selected && selected.id !== "paypal" && (
           <div style={{ marginBottom:16 }}>
             {selected.info.length > 0 && (
               <div style={{ background:"rgba(255,255,255,0.05)", border:`1px solid ${selected.color}44`, borderRadius:16, padding:"16px", marginBottom:14 }}>
@@ -1006,12 +1069,51 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
           </div>
         )}
 
+        {/* PayPal direct payment */}
+        {method === "paypal" && (
+          <div style={{ marginBottom:16 }}>
+            <div style={{ background:"rgba(0,48,135,0.10)", border:"1px solid rgba(0,48,135,0.30)", borderRadius:16, padding:"16px", marginBottom:14 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                <p style={{ color:"#60A5FA", fontSize:11, fontFamily:F, fontWeight:700, margin:0 }}>TOTAL A COBRAR</p>
+              </div>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
+                <span style={{ color:COLORS.textMuted, fontSize:12, fontFamily:F }}>Subtotal</span>
+                <span style={{ color:COLORS.text, fontSize:12, fontWeight:700, fontFamily:F }}>${totalUsdt.toFixed(2)} USD</span>
+              </div>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+                <span style={{ color:COLORS.textMuted, fontSize:12, fontFamily:F }}>Comisión PayPal (3.49% + $0.49)</span>
+                <span style={{ color:"#F3BA2F", fontSize:12, fontWeight:700, fontFamily:F }}>+${(paypalTotal - totalUsdt).toFixed(2)} USD</span>
+              </div>
+              <div style={{ height:1, background:"rgba(255,255,255,0.08)", marginBottom:10 }}/>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                <span style={{ color:COLORS.text, fontSize:14, fontWeight:800, fontFamily:F }}>Total</span>
+                <span style={{ color:"#60A5FA", fontSize:20, fontWeight:900, fontFamily:F }}>${paypalTotal} USD</span>
+              </div>
+            </div>
+            {isGuest && !isValidEmail && (
+              <p style={{ color:"#F3BA2F", fontSize:11, fontFamily:F, marginBottom:10, textAlign:"center" }}>⚠️ Ingresa tu correo arriba para recibir el código</p>
+            )}
+            {(!isGuest || isValidEmail) && (
+              paypalSdkReady
+                ? <div ref={paypalRef} style={{ borderRadius:12, overflow:"hidden" }}/>
+                : <div style={{ background:"rgba(255,255,255,0.04)", borderRadius:12, padding:"20px", textAlign:"center" }}>
+                    <p style={{ color:COLORS.textMuted, fontSize:12, fontFamily:F, margin:0 }}>Cargando PayPal...</p>
+                  </div>
+            )}
+          </div>
+        )}
+
         {error && <p style={{ color:COLORS.danger, fontSize:12, fontFamily:F, textAlign:"center", marginBottom:12 }}>{error}</p>}
 
-        <button disabled={!canSubmit} onClick={handleConfirm} style={{ width:"100%", padding:"16px", background: !canSubmit ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg,#7B6FFF,#4F8EFF)", border:"none", borderRadius:16, color: !canSubmit ? COLORS.textMuted : "#fff", fontSize:15, fontWeight:800, fontFamily:F, cursor: !canSubmit ? "not-allowed" : "pointer", transition:"all 0.2s", boxShadow: !canSubmit ? "none" : "0 4px 20px rgba(100,100,255,0.35)" }}>
-          {loading ? "Enviando pedido..." : "Confirmar pago"}
-        </button>
-        <p style={{ color:COLORS.textMuted, fontSize:10, textAlign:"center", fontFamily:F, marginTop:12 }}>🔒 Pago manual verificado por el equipo Start Game</p>
+        {method !== "paypal" && (
+          <>
+            <button disabled={!canSubmit} onClick={handleConfirm} style={{ width:"100%", padding:"16px", background: !canSubmit ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg,#7B6FFF,#4F8EFF)", border:"none", borderRadius:16, color: !canSubmit ? COLORS.textMuted : "#fff", fontSize:15, fontWeight:800, fontFamily:F, cursor: !canSubmit ? "not-allowed" : "pointer", transition:"all 0.2s", boxShadow: !canSubmit ? "none" : "0 4px 20px rgba(100,100,255,0.35)" }}>
+              {loading ? "Enviando pedido..." : "Confirmar pago"}
+            </button>
+            <p style={{ color:COLORS.textMuted, fontSize:10, textAlign:"center", fontFamily:F, marginTop:12 }}>🔒 Pago manual verificado por el equipo Start Game</p>
+          </>
+        )}
+        {method === "paypal" && <p style={{ color:COLORS.textMuted, fontSize:10, textAlign:"center", fontFamily:F, marginTop:8 }}>🔒 Pago seguro procesado por PayPal</p>}
       </div>
     </div>
   );
