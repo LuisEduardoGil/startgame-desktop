@@ -1298,6 +1298,14 @@ function AdminOrders() {
   useEffect(() => { load(); const iv = setInterval(load, 5000); return ()=>clearInterval(iv); }, []);
 
   const handleVerify = async (id) => { await sb.update("orders", id, { status:"verified" }); load(); };
+  const handleDeliverWS = async () => {
+    if (!selected) return;
+    setSending(true);
+    await sb.update("orders", selected.id, { status:"delivered", gift_code:"Entregado por WhatsApp" });
+    setSending(false);
+    setSelected(null);
+    load();
+  };
   const handleDeliver = async () => {
     if (!giftCode.trim() || !selected) return;
     setSending(true);
@@ -1389,6 +1397,9 @@ function AdminOrders() {
               <input value={giftCode} onChange={e=>setGiftCode(e.target.value)} placeholder="Código gift card..." style={{ width:"100%", boxSizing:"border-box", padding:"11px 14px", background:"rgba(255,255,255,0.05)", border:"1px solid rgba(0,200,150,0.4)", borderRadius:10, color:"#fff", fontSize:13, fontFamily:F, outline:"none", marginBottom:8 }}/>
               <button disabled={!giftCode.trim()||sending} onClick={handleDeliver} style={{ width:"100%", padding:"10px", background:giftCode.trim()?"linear-gradient(135deg,#00C896,#00A878)":"rgba(255,255,255,0.04)", border:"none", borderRadius:10, color:giftCode.trim()?"#fff":"rgba(255,255,255,0.25)", fontSize:13, fontWeight:800, fontFamily:F, cursor:giftCode.trim()?"pointer":"not-allowed" }}>
                 {sending?"Enviando...":"✅ Entregar código"}
+              </button>
+              <button disabled={sending} onClick={handleDeliverWS} style={{ width:"100%", padding:"10px", background:"linear-gradient(135deg,#25D366,#1da851)", border:"none", borderRadius:10, color:"#fff", fontSize:13, fontWeight:800, fontFamily:F, cursor:"pointer", marginTop:8 }}>
+                📱 Entregado por WhatsApp
               </button>
             </div>
           )}
