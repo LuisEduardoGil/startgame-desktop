@@ -967,9 +967,14 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
         <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, letterSpacing:"0.1em", fontWeight:600, margin:"0 0 10px" }}>SELECCIONA UN MÉTODO</p>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:20 }}>
           {METHODS.map(m => (
-            <button key={m.id} onClick={()=>{ setMethod(m.id); setRef(""); setError(""); }} style={{ background: method===m.id ? `${m.color}22` : "rgba(255,255,255,0.05)", border:`1.5px solid ${method===m.id ? m.color : "rgba(255,255,255,0.10)"}`, borderRadius:14, padding:"14px 10px", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:6, transition:"all 0.15s" }}>
-              <span style={{ fontSize:22 }}>{m.icon}</span>
-              <span style={{ color: method===m.id ? m.color : COLORS.textMuted, fontSize:12, fontWeight:700, fontFamily:F }}>{m.label}</span>
+            <button key={m.id} onClick={()=>{ setMethod(m.id); setRef(""); setError(""); }} style={{ background: method===m.id ? `${m.color}22` : "rgba(255,255,255,0.05)", border:`1.5px solid ${method===m.id ? m.color : "rgba(255,255,255,0.10)"}`, borderRadius:14, padding:"14px 10px", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:8, transition:"all 0.15s" }}>
+              {m.logo_url
+                ? <div style={{ width:40, height:40, borderRadius:10, background:"rgba(255,255,255,0.08)", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden" }}>
+                    <img src={m.logo_url} style={{ width:32, height:32, objectFit:"contain" }} alt={m.label}/>
+                  </div>
+                : <span style={{ fontSize:28 }}>{m.icon}</span>
+              }
+              <span style={{ color: method===m.id ? m.color : COLORS.textMuted, fontSize:11, fontWeight:700, fontFamily:F, textAlign:"center", lineHeight:1.2 }}>{m.label}</span>
             </button>
           ))}
         </div>
@@ -978,7 +983,15 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
           <div style={{ marginBottom:16 }}>
             {selected.info.length > 0 && (
               <div style={{ background:"rgba(255,255,255,0.05)", border:`1px solid ${selected.color}44`, borderRadius:16, padding:"16px", marginBottom:14 }}>
-                <p style={{ color:selected.color, fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 12px" }}>DATOS PARA TRANSFERIR {useUsdt ? fmtBs(null, tasa, totalUsdt) : fmtBs(total, tasa)}</p>
+                <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
+                  {selected.logo_url
+                    ? <div style={{ width:36, height:36, borderRadius:10, background:"rgba(255,255,255,0.08)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, overflow:"hidden" }}>
+                        <img src={selected.logo_url} style={{ width:28, height:28, objectFit:"contain" }} alt={selected.label}/>
+                      </div>
+                    : <span style={{ fontSize:22, flexShrink:0 }}>{selected.icon}</span>
+                  }
+                  <p style={{ color:selected.color, fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:0, flex:1 }}>DATOS PARA TRANSFERIR {useUsdt ? fmtBs(null, tasa, totalUsdt) : fmtBs(total, tasa)}</p>
+                </div>
                 {selected.info.map((row, i) => (
                   <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom: i < selected.info.length-1 ? 10 : 0 }}>
                     <span style={{ color:COLORS.textMuted, fontSize:13, fontFamily:F }}>{row.label}</span>
@@ -1801,8 +1814,52 @@ function PaymentMethodsEditor() {
           {/* Expanded editor */}
           {expanded===mIdx && (
             <div style={{ padding:"0 14px 14px", borderTop:"1px solid rgba(255,255,255,0.06)" }}>
+              {/* Logo upload */}
+              <div style={{ marginTop:14, marginBottom:14 }}>
+                <p style={{ color:"#F0EDE8", fontSize:9, fontFamily:F, fontWeight:700, margin:"0 0 8px", letterSpacing:"0.08em" }}>LOGO DEL MÉTODO</p>
+                <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                  <div style={{ width:64, height:64, borderRadius:14, background:"rgba(255,255,255,0.06)", border:`2px solid ${m.logo_url ? m.color+"66" : "rgba(255,255,255,0.12)"}`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, overflow:"hidden" }}>
+                    {m.logo_url
+                      ? <img src={m.logo_url} style={{ width:48, height:48, objectFit:"contain" }} alt={m.label}/>
+                      : <span style={{ fontSize:28 }}>{m.icon}</span>
+                    }
+                  </div>
+                  <div style={{ flex:1 }}>
+                    <label style={{ display:"block", padding:"9px 12px", background:"rgba(123,111,255,0.10)", border:"1px dashed rgba(123,111,255,0.35)", borderRadius:10, color:"#A89FFF", fontSize:11, fontFamily:F, fontWeight:700, cursor:"pointer", textAlign:"center", marginBottom:6 }}>
+                      📷 {m.logo_url ? "Cambiar logo" : "Subir logo"}
+                      <input type="file" accept="image/*" style={{ display:"none" }} onChange={e=>{
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = ev => {
+                          const img = new Image();
+                          img.onload = () => {
+                            const canvas = document.createElement("canvas");
+                            const max = 120;
+                            const ratio = Math.min(max/img.width, max/img.height, 1);
+                            canvas.width = Math.round(img.width * ratio);
+                            canvas.height = Math.round(img.height * ratio);
+                            canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+                            update(mIdx, "logo_url", canvas.toDataURL("image/png", 0.85));
+                          };
+                          img.src = ev.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                      }}/>
+                    </label>
+                    {m.logo_url && (
+                      <button onClick={()=>update(mIdx,"logo_url","")}
+                        style={{ width:"100%", padding:"6px", background:"rgba(255,77,106,0.10)", border:"1px solid rgba(255,77,106,0.25)", borderRadius:8, color:"#FF4D6A", fontSize:10, fontFamily:F, cursor:"pointer" }}>
+                        🗑 Quitar logo
+                      </button>
+                    )}
+                    <p style={{ color:"rgba(255,255,255,0.25)", fontSize:9, fontFamily:F, margin:"4px 0 0", textAlign:"center" }}>Recomendado: fondo transparente · máx 150KB</p>
+                  </div>
+                </div>
+              </div>
+              <div style={{ height:1, background:"rgba(255,255,255,0.06)", marginBottom:12 }}/>
               {/* Label + Icon + Color */}
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 60px 80px", gap:8, marginTop:12, marginBottom:10 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 60px 80px", gap:8, marginBottom:10 }}>
                 <div>
                   <p style={{ color:"#F0EDE8", fontSize:9, fontFamily:F, margin:"0 0 4px" }}>NOMBRE</p>
                   <input value={m.label} onChange={e=>update(mIdx,"label",e.target.value)}
