@@ -700,10 +700,22 @@ function NexusScreen() {
         src="https://nexusgaming.lat/dashboard"
         onLoad={() => setLoaded(true)}
         style={{ width:"100%", height:"100%", border:"none", opacity: loaded ? 1 : 0, transition:"opacity 0.4s", display:"block" }}
-        allow="microphone *; camera *; clipboard-write *; popup *"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
+        allow="microphone *; camera *; clipboard-write *"
         title="Nexus IA"
       />
+      {/* Botón abrir en navegador — solución para Google Auth en iframe */}
+      {loaded && (
+        <div style={{ position:"absolute", bottom:90, right:16, zIndex:10 }}>
+          <button
+            onClick={() => window.open("https://nexusgaming.lat/dashboard", "_blank")}
+            style={{ background:"rgba(20,20,40,0.85)", backdropFilter:"blur(12px)", border:"1px solid rgba(255,255,255,0.15)", borderRadius:12, color:"rgba(255,255,255,0.7)", fontSize:11, fontFamily:F, fontWeight:700, padding:"8px 14px", cursor:"pointer", display:"flex", alignItems:"center", gap:6 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+            Abrir en navegador
+          </button>
+        </div>
+      )}
     </div>
   );
 }
