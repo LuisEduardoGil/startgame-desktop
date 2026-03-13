@@ -52,7 +52,7 @@ const sbAuth = {
     return r.json();
   },
   async signInWithGoogle() {
-    window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(window.location.origin)}`;
+    window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(window.location.origin + "/")}`;
   },
   async signOut(token) {
     await fetch(`${SUPABASE_URL}/auth/v1/logout`, { method:"POST", headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${token}`} });
@@ -700,7 +700,8 @@ function NexusScreen() {
         src="https://nexusgaming.lat/dashboard"
         onLoad={() => setLoaded(true)}
         style={{ width:"100%", height:"100%", border:"none", opacity: loaded ? 1 : 0, transition:"opacity 0.4s", display:"block" }}
-        allow="microphone *; camera *; clipboard-write *"
+        allow="microphone *; camera *; clipboard-write *; popup *"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
         title="Nexus IA"
       />
     </div>
