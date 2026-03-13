@@ -2165,18 +2165,14 @@ export default function App() {
     ]).then(([tasa, rows, payMethods]) => {
       if (tasa) setGlobalTasa(parseFloat(tasa));
       if (payMethods) { try { setGlobalMethods(JSON.parse(payMethods)); } catch(e) {} }
-      console.log("Supabase products:", JSON.stringify(rows));
-      // Pure Supabase — no merging with defaults
       if (Array.isArray(rows) && rows.length > 0) {
         setGlobalProducts(rows);
       } else {
-        console.log("Fallback to DEFAULT_PRODUCTS");
         setGlobalProducts(DEFAULT_PRODUCTS);
       }
       setAppReady(true);
       document.body.style.overflow = "";
       if(mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
-      // Deep link: check URL hash for product slug
       const hashSlug = window.location.hash.replace(/^#\/?/, "");
       if (hashSlug && hashSlug !== "/") {
         const found = findProductBySlug(hashSlug);
