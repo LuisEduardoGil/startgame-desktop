@@ -1095,7 +1095,7 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
               </div>
             </div>
             {isGuest && !isValidEmail && (
-              <p style={{ color:"#F3BA2F", fontSize:11, fontFamily:F, marginBottom:10, textAlign:"center" }}>⚠️ Ingresa tu correo arriba para continuar</p>
+              <p style={{ color:"#F3BA2F", fontSize:11, fontFamily:F, marginBottom:10, textAlign:"center" }}>⚠️ Ingresa tu correo arriba para recibir el código</p>
             )}
             {(!isGuest || isValidEmail) && (
               paypalSdkReady
@@ -1359,7 +1359,13 @@ function OrderStatusScreen({ orderId, onBack }) {
               </div>
             )}
 
-
+            {/* Nota adicional del admin */}
+            {order?.status === "delivered" && order?.note && (
+              <div style={{ width:"100%", maxWidth:340, background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.10)", borderRadius:14, padding:"14px 16px", marginBottom:16 }}>
+                <p style={{ color:COLORS.textMuted, fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 6px" }}>📝 NOTA</p>
+                <p style={{ color:COLORS.text, fontSize:13, fontFamily:F, margin:0, lineHeight:1.5 }}>{order.note}</p>
+              </div>
+            )}
 
             {order?.status === "delivered" ? (
               <button onClick={onBack} style={{ marginTop:20, padding:"14px 32px", background:"linear-gradient(135deg,#7B6FFF,#4F8EFF)", border:"none", borderRadius:14, color:"#fff", fontSize:14, fontWeight:800, fontFamily:F, cursor:"pointer" }}>Ir al inicio</button>
@@ -1424,6 +1430,7 @@ function AdminOrders() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [giftCodes, setGiftCodes] = useState({}); // { itemIndex: code }
+  const [orderNote, setOrderNote] = useState("");
   const [sending, setSending] = useState(false);
   const [collapsedDays, setCollapsedDays] = useState({});
   const [collapsedDelivered, setCollapsedDelivered] = useState({});
@@ -1444,10 +1451,11 @@ function AdminOrders() {
   const handleDeliverWS = async () => {
     if (!selected) return;
     setSending(true);
-    await sb.update("orders", selected.id, { status:"delivered", gift_code:"Entregado por WhatsApp" });
+    await sb.update("orders", selected.id, { status:"delivered", gift_code:"Entregado por WhatsApp", ...(orderNote.trim() ? { note: orderNote.trim() } : {}) });
     setSending(false);
     setSelected(null);
     setGiftCodes({});
+    setOrderNote("");
     load();
   };
   const handleDeliver = async () => {
@@ -1459,7 +1467,7 @@ function AdminOrders() {
       ? JSON.stringify(_items.map((item, i) => ({ name: item.name, amount: item.amount, code: giftCodes[i].trim() })))
       : giftCodes[0].trim();
     setSending(true);
-    await sb.update("orders", selected.id, { status:"delivered", gift_code: giftCodeValue });
+    await sb.update("orders", selected.id, { status:"delivered", gift_code: giftCodeValue, ...(orderNote.trim() ? { note: orderNote.trim() } : {}) });
     // Send email via EmailJS if customer has email
     if (selected.customer_email) {
       try {
@@ -1473,7 +1481,7 @@ function AdminOrders() {
         });
       } catch(e) { console.error("EmailJS error:", e); }
     }
-    setSelected(null); setGiftCodes({}); setSending(false); load();
+    setSelected(null); setGiftCodes({}); setOrderNote(""); setSending(false); load();
   };
 
   const SL = { pending:"⏳ Pendiente", verified:"🔍 Verificado", delivered:"✅ Entregado" };
@@ -1554,6 +1562,13 @@ function AdminOrders() {
                   />
                 </div>
               ))}
+              <textarea
+                value={orderNote}
+                onChange={e=>setOrderNote(e.target.value)}
+                placeholder="Nota adicional para el cliente (opcional)..."
+                rows={2}
+                style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:"#F0EDE8", fontSize:12, fontFamily:F, outline:"none", resize:"none", marginBottom:8 }}
+              />
               <button
                 disabled={!(order.items||[]).every((_,i)=>(giftCodes[i]||"").trim())||sending}
                 onClick={handleDeliver}
