@@ -578,10 +578,12 @@ function AutoScrollCards({ cards, onCardClick }) {
       <div ref={scrollRef} style={{ display:"flex", gap:12, width:"max-content", willChange:"transform" }}>
         {items.map((card, idx) => (
           <div key={idx} onClick={()=>onCardClick(card)}
-            style={{ minWidth:110, background:COLORS.card, borderRadius:14, border:`1px solid ${COLORS.border}`, flexShrink:0, overflow:"hidden", cursor:"pointer", marginLeft:idx===0?20:0 }}>
-            <img src={getImg(card)} style={{ width:"100%", height:70, objectFit:"cover" }}/>
-            <div style={{ padding:"6px 12px 10px 12px" }}>
-              <p style={{ color:COLORS.text, fontSize:11, fontWeight:700, margin:"0 0 2px", fontFamily:F }}>{card.name}</p>
+            style={{ minWidth:110, width:110, background:COLORS.card, borderRadius:14, border:`1px solid ${COLORS.border}`, flexShrink:0, overflow:"hidden", cursor:"pointer", marginLeft:idx===0?20:0, display:"flex", flexDirection:"column" }}>
+            <div style={{ width:"100%", height:70, flexShrink:0, overflow:"hidden" }}>
+              <img src={getImg(card)} style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }}/>
+            </div>
+            <div style={{ padding:"6px 10px 10px 10px", display:"flex", flexDirection:"column", justifyContent:"flex-start" }}>
+              <p style={{ color:COLORS.text, fontSize:11, fontWeight:700, margin:"0 0 2px", fontFamily:F, minHeight:28, maxHeight:28, display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden" }}>{card.name}</p>
               <p style={{ color:COLORS.textSub, fontSize:10, fontWeight:800, margin:0, fontFamily:F }}>
                 {(() => {
                   const a = (card.amounts||[])[0];
@@ -1103,7 +1105,7 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
               </div>
             </div>
             {isGuest && !isValidEmail && (
-              <p style={{ color:"#F3BA2F", fontSize:11, fontFamily:F, marginBottom:10, textAlign:"center" }}>⚠️ Ingresa tu correo arriba para continuar</p>
+              <p style={{ color:"#F3BA2F", fontSize:11, fontFamily:F, marginBottom:10, textAlign:"center" }}>⚠️ Ingresa tu correo arriba para recibir el código</p>
             )}
             {(!isGuest || isValidEmail) && (
               paypalSdkReady
