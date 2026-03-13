@@ -1095,7 +1095,7 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
               </div>
             </div>
             {isGuest && !isValidEmail && (
-              <p style={{ color:"#F3BA2F", fontSize:11, fontFamily:F, marginBottom:10, textAlign:"center" }}>⚠️ Ingresa tu correo arriba para recibir el código</p>
+              <p style={{ color:"#F3BA2F", fontSize:11, fontFamily:F, marginBottom:10, textAlign:"center" }}>⚠️ Ingresa tu correo arriba para continuar</p>
             )}
             {(!isGuest || isValidEmail) && (
               paypalSdkReady
