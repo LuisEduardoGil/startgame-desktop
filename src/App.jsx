@@ -2154,12 +2154,15 @@ export default function App() {
   const [adminMode, setAdminMode] = useState(false);
   const [deepLinkCard, setDeepLinkCard] = useState(null);
   const [adminAuth, setAdminAuth] = useState(false);
-  const [appReady, setAppReady] = useState(false);
+  // Si hay cache, no mostrar pantalla de carga nunca
+  const hasCache = (() => { try { return !!localStorage.getItem("sg_cache_v1"); } catch(e) { return false; } })();
+  const [appReady, setAppReady] = useState(hasCache);
 
   // Load tasa + products on mount
   useEffect(() => {
     // Paso 1: cache de localStorage (datos reales de la sesion anterior)
     const CACHE_KEY = "sg_cache_v1";
+    let hasCache = false;
     try {
       const cached = localStorage.getItem(CACHE_KEY);
       if (cached) {
@@ -2167,14 +2170,18 @@ export default function App() {
         if (products?.length) setGlobalProducts(products);
         if (tasa) setGlobalTasa(tasa);
         if (methods?.length) setGlobalMethods(methods);
+        hasCache = true;
       } else {
         setGlobalProducts(DEFAULT_PRODUCTS);
       }
     } catch(e) {
       setGlobalProducts(DEFAULT_PRODUCTS);
     }
-    setAppReady(true);
-    document.body.style.overflow = "";
+    // Solo mostrar app de inmediato si hay cache — si no, esperar Supabase (primera visita)
+    if (hasCache) {
+      setAppReady(true);
+      document.body.style.overflow = "";
+    }
 
     // Paso 2: Supabase en background — actualiza y guarda cache
     Promise.all([
@@ -2188,6 +2195,8 @@ export default function App() {
       if (newTasa) setGlobalTasa(newTasa);
       if (newMethods) setGlobalMethods(newMethods);
       if (newProducts) setGlobalProducts(newProducts);
+      setAppReady(true);
+      document.body.style.overflow = "";
       // Paso 3: guardar cache para proxima apertura
       try {
         localStorage.setItem("sg_cache_v1", JSON.stringify({
