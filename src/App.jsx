@@ -648,12 +648,14 @@ function StoreScreen({ onAddToCart, onBuyNow, cart, onCartClick }) {
   return (
     <div style={{ padding:"24px 20px", paddingBottom:100 }}>
       <div style={{ marginBottom:24 }}>
-        <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, margin:"0 0 4px", letterSpacing:"0.1em" }}>TIENDA</p>
-        <h2 style={{ color:COLORS.text, fontSize:24, fontWeight:900, margin:0, fontFamily:F }}>Gift Cards<span style={{ color:"#F0EDE8" }}>.</span></h2>
+        <h2 style={{ color:COLORS.text, fontSize:26, fontWeight:900, margin:0, fontFamily:F }}>Tienda<span style={{ color:"#7B6FFF" }}>.</span></h2>
       </div>
-      <div style={{ background:COLORS.card, borderRadius:12, border:`1px solid ${COLORS.border}`, padding:"12px 16px", display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
-        <span style={{ color:COLORS.textMuted }}>🔍</span>
-        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar plataforma..." style={{ background:"none", border:"none", outline:"none", color:COLORS.text, fontSize:14, fontFamily:F, flex:1 }}/>
+      <div style={{ background:"rgba(255,255,255,0.05)", borderRadius:16, border:"1px solid rgba(255,255,255,0.10)", padding:"12px 16px", display:"flex", alignItems:"center", gap:12, marginBottom:16, transition:"border 0.2s", ...(search ? { border:"1px solid rgba(123,111,255,0.4)" } : {}) }}>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0 }}>
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar en la tienda..." style={{ background:"none", border:"none", outline:"none", color:COLORS.text, fontSize:14, fontFamily:F, flex:1 }}/>
+        {search && <button onClick={()=>setSearch("")} style={{ background:"rgba(255,255,255,0.08)", border:"none", borderRadius:6, color:COLORS.textMuted, cursor:"pointer", width:22, height:22, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, flexShrink:0 }}>✕</button>}
       </div>
       <div style={{ display:"flex", gap:8, marginBottom:20, overflowX:"auto" }}>
         {filters.map(f=>(
