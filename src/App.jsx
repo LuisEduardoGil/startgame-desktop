@@ -1304,10 +1304,55 @@ function OrderStatusScreen({ orderId, onBack }) {
                       </div>
                     </>
                   ) : (
-                    <div style={{ fontSize:48, marginBottom:16 }}>{st.icon}</div>
+                    /* verified state — progress steps */
+                    <div style={{ width:"100%" }}>
+                      <style>{`
+                        @keyframes dotBounce{0%,80%,100%{transform:scale(0.6);opacity:0.4}40%{transform:scale(1);opacity:1}}
+                        @keyframes fadeSlideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+                      `}</style>
+                      {/* Steps */}
+                      <div style={{ display:"flex", alignItems:"flex-start", gap:0, marginBottom:28 }}>
+                        {/* Step 1 — Pedido enviado */}
+                        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", flex:1 }}>
+                          <div style={{ width:32, height:32, borderRadius:"50%", background:"rgba(0,200,150,0.15)", border:"2px solid #00C896", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:8 }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00C896" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                          </div>
+                          <p style={{ color:"#00C896", fontSize:10, fontWeight:700, fontFamily:F, margin:0, textAlign:"center", lineHeight:1.3 }}>Pedido{"
+"}enviado</p>
+                        </div>
+                        {/* Line 1 */}
+                        <div style={{ flex:1, height:2, background:"linear-gradient(90deg,#00C896,#4F8EFF)", marginTop:15, borderRadius:2 }}/>
+                        {/* Step 2 — Pago verificado */}
+                        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", flex:1 }}>
+                          <div style={{ width:32, height:32, borderRadius:"50%", background:"rgba(79,142,255,0.15)", border:"2px solid #4F8EFF", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:8 }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4F8EFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                          </div>
+                          <p style={{ color:"#4F8EFF", fontSize:10, fontWeight:700, fontFamily:F, margin:0, textAlign:"center", lineHeight:1.3 }}>Pago{"
+"}verificado</p>
+                        </div>
+                        {/* Line 2 */}
+                        <div style={{ flex:1, height:2, background:"rgba(255,255,255,0.10)", marginTop:15, borderRadius:2, position:"relative", overflow:"hidden" }}>
+                          <div style={{ position:"absolute", top:0, left:0, height:"100%", width:"60%", background:"rgba(255,255,255,0.15)", borderRadius:2, animation:"fadeSlideIn 1s ease infinite alternate" }}/>
+                        </div>
+                        {/* Step 3 — Preparando */}
+                        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", flex:1 }}>
+                          <div style={{ width:32, height:32, borderRadius:"50%", background:"rgba(255,255,255,0.06)", border:"2px solid rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", gap:3, marginBottom:8 }}>
+                            {[0,1,2].map(i => <div key={i} style={{ width:4, height:4, borderRadius:"50%", background:"rgba(255,255,255,0.4)", animation:`dotBounce 1.2s ease-in-out ${i*0.2}s infinite` }}/>)}
+                          </div>
+                          <p style={{ color:COLORS.textMuted, fontSize:10, fontWeight:700, fontFamily:F, margin:0, textAlign:"center", lineHeight:1.3 }}>Preparando{"
+"}gift card</p>
+                        </div>
+                      </div>
+                      <h3 style={{ color:"#4F8EFF", fontSize:18, fontWeight:800, fontFamily:F, margin:"0 0 6px" }}>Pago confirmado</h3>
+                      <p style={{ color:COLORS.textMuted, fontSize:12, fontFamily:F, margin:0, lineHeight:1.5 }}>Estamos preparando tu gift card. Te notificaremos enseguida.</p>
+                    </div>
                   )}
-                  <h3 style={{ color:st.color, fontSize:20, fontWeight:800, fontFamily:F, margin:"0 0 8px" }}>{st.title}</h3>
-                  <p style={{ color:COLORS.textMuted, fontSize:13, fontFamily:F, margin:0, lineHeight:1.5 }}>{st.sub}</p>
+                  {order?.status !== "verified" && <h3 style={{ color:st.color, fontSize:20, fontWeight:800, fontFamily:F, margin:"0 0 8px" }}>{st.title}</h3>}
+                  {order?.status !== "verified" && <p style={{ color:COLORS.textMuted, fontSize:13, fontFamily:F, margin:0, lineHeight:1.5 }}>{st.sub}</p>}
                 </>
               )}
             </div>
