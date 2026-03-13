@@ -902,48 +902,36 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
     if (!node || !paypalSdkReady || paypalRendered.current) return;
     paypalRef.current = node;
     paypalRendered.current = true;
-    const onApprove = async (_data, actions) => {
-      setLoading(true);
-      try {
-        const details = await actions.order.capture();
-        const txId = details.id;
-        const email = details.payer?.email_address || customerEmail;
-        const isManual = cart.some(i => i.manual_delivery);
-        const totalBs = parseFloat((totalUsdt * tasa).toFixed(2));
-        const result = await sb.insert("orders", {
-          customer_ref: txId,
-          customer_email: email,
-          payment_method: "paypal",
-          items: cart.map(i => ({ name: i.name, amount: i.selectedAmount, quantity: i.quantity })),
-          total: paypalTotal,
-          total_bs: totalBs,
-          total_usdt: parseFloat(totalUsdt.toFixed(2)),
-          status: "verified",
-          manual_delivery: isManual
-        });
-        if (result && result[0]?.id) onOrderCreated(result[0].id);
-        else setError("Error al crear el pedido. Contacta soporte con tu ID: " + txId);
-      } catch(e) { setError("Error al procesar: " + e.message); }
-      setLoading(false);
-    };
-    const createOrder = (_data, actions) => actions.order.create({
-      purchase_units: [{ amount: { value: String(paypalTotal), currency_code:"USD" }, description: cart.map(i=>`${i.name} ${i.selectedAmount}x${i.quantity}`).join(", ") }]
-    });
-    const onError = (err) => { setError("Error de PayPal. Intenta de nuevo."); console.error(err); };
-    const baseStyle = { color:"gold", shape:"rect", height:50 };
-
-    // PayPal button
     window.paypal.Buttons({
-      fundingSource: window.paypal.FUNDING.PAYPAL,
-      style: { ...baseStyle, label:"pay" },
-      createOrder, onApprove, onError
-    }).render(node);
-
-    // Debit/Credit card button
-    window.paypal.Buttons({
-      fundingSource: window.paypal.FUNDING.CARD,
-      style: { ...baseStyle },
-      createOrder, onApprove, onError
+      style: { layout:"vertical", color:"gold", shape:"rect", label:"pay", height:50 },
+      createOrder: (_data, actions) => actions.order.create({
+        purchase_units: [{ amount: { value: String(paypalTotal), currency_code:"USD" }, description: cart.map(i=>`${i.name} ${i.selectedAmount}x${i.quantity}`).join(", ") }]
+      }),
+      onApprove: async (_data, actions) => {
+        setLoading(true);
+        try {
+          const details = await actions.order.capture();
+          const txId = details.id;
+          const email = details.payer?.email_address || customerEmail;
+          const isManual = cart.some(i => i.manual_delivery);
+          const totalBs = parseFloat((totalUsdt * tasa).toFixed(2));
+          const result = await sb.insert("orders", {
+            customer_ref: txId,
+            customer_email: email,
+            payment_method: "paypal",
+            items: cart.map(i => ({ name: i.name, amount: i.selectedAmount, quantity: i.quantity })),
+            total: paypalTotal,
+            total_bs: totalBs,
+            total_usdt: parseFloat(totalUsdt.toFixed(2)),
+            status: "verified",
+            manual_delivery: isManual
+          });
+          if (result && result[0]?.id) onOrderCreated(result[0].id);
+          else setError("Error al crear el pedido. Contacta soporte con tu ID: " + txId);
+        } catch(e) { setError("Error al procesar: " + e.message); }
+        setLoading(false);
+      },
+      onError: (err) => { setError("Error de PayPal. Intenta de nuevo."); console.error(err); }
     }).render(node);
   };
 
@@ -1113,7 +1101,7 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
                         <span style={{ color:"rgba(255,255,255,0.25)", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em" }}>PAGAR CON</span>
                         <div style={{ flex:1, height:1, background:"rgba(255,255,255,0.08)" }}/>
                       </div>
-                      <div ref={initPaypal} style={{ borderRadius:15, overflow:"hidden", minHeight:50 }}/>
+                      <div ref={initPaypal} style={{ borderRadius:10, overflow:"hidden", minHeight:50 }}/>
                       <p style={{ color:"rgba(255,255,255,0.2)", fontSize:9, fontFamily:F, textAlign:"center", marginTop:10 }}>
                         Al continuar aceptas los términos de PayPal
                       </p>
