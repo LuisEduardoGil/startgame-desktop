@@ -589,8 +589,8 @@ function AutoScrollCards({ cards, onCardClick }) {
                   const a = (card.amounts||[])[0];
                   const u = getUsdt(card, a);
                   const num = parseFloat(String(a));
-                  if (u) return `Desde ${fmtBs(null, tasa, parseFloat(u))}`;
-                  if (!isNaN(num)) return `Desde ${fmtBs(num, tasa)}`;
+                  if (u) return fmtBs(null, tasa, parseFloat(u));
+                  if (!isNaN(num)) return fmtBs(num, tasa);
                   return a||"";
                 })()}
               </p>
