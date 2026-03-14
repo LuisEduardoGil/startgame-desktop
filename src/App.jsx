@@ -1587,13 +1587,16 @@ function AdminOrders() {
           <p style={{ color:"rgba(255,255,255,0.9)", fontSize:10, fontFamily:F, margin:0 }}>{order.total_usdt ? `${Number(order.total_usdt).toFixed(2)} USDT` : `$${order.total} USD`}</p>
         </div>
       </div>
-      {order.items && order.items.map((item,i)=>(
-        <div key={i} style={{ display:"flex", alignItems:"center", gap:8, background:"rgba(255,255,255,0.03)", borderRadius:8, padding:"6px 10px", marginBottom:3 }}>
-          <span style={{ fontSize:12 }}>🎁</span>
-          <p style={{ color:"#ffffff", fontSize:11, fontFamily:F, fontWeight:600, margin:0, flex:1 }}>{item.name}</p>
-          <span style={{ color:"rgba(255,255,255,0.9)", fontSize:10, fontFamily:F }}>{item.selectedAmount || item.amount} × {item.quantity}</span>
-        </div>
-      ))}
+      {order.items && order.items.map((item,i)=>{
+        const prod = GLOBAL_PRODUCTS.find(p => p.name === item.name) || {};
+        return (
+          <div key={i} style={{ display:"flex", alignItems:"center", gap:8, background:"rgba(255,255,255,0.03)", borderRadius:8, padding:"6px 10px", marginBottom:3 }}>
+            <img src={getImg(prod.img_url ? prod : { name: item.name })} style={{ width:36, height:26, objectFit:"cover", borderRadius:5, flexShrink:0 }} alt={item.name}/>
+            <p style={{ color:"#ffffff", fontSize:11, fontFamily:F, fontWeight:600, margin:0, flex:1 }}>{item.name}</p>
+            <span style={{ color:"rgba(255,255,255,0.9)", fontSize:10, fontFamily:F }}>{item.selectedAmount || item.amount} × {item.quantity}</span>
+          </div>
+        );
+      })}
       {selected?.id===order.id && order.status!=="delivered" && (
         <div style={{ marginTop:10, paddingTop:10, borderTop:"1px solid rgba(255,255,255,0.07)" }} onClick={e=>e.stopPropagation()}>
           {order.status==="pending" && (
