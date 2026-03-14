@@ -24,7 +24,7 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const RESEND_API_KEY = "re_Duch2Gnq_BytxT55CVVjH7YP6p3HoYEMR";
 const FROM_EMAIL     = "Start Game <noreply@startgame.app>";
 
-async function sendGiftEmail({ to_email, order_id, gift_code, items, payment_method, total }) {
+async function sendGiftEmail({ to_email, order_id, gift_code, items, payment_method, total, total_bs }) {
   const res = await fetch(`${SUPABASE_URL}/functions/v1/send-order-email`, {
     method: "POST",
     headers: {
@@ -32,7 +32,7 @@ async function sendGiftEmail({ to_email, order_id, gift_code, items, payment_met
       "apikey": SUPABASE_KEY,
       "Authorization": `Bearer ${SUPABASE_KEY}`,
     },
-    body: JSON.stringify({ order_id, customer_email: to_email, gift_code, items, total, payment_method }),
+    body: JSON.stringify({ order_id, customer_email: to_email, gift_code, items, total, total_bs, payment_method }),
   });
   if (!res.ok) {
     const err = await res.json();
@@ -1520,9 +1520,10 @@ function AdminOrders() {
         await sendGiftEmail({
           to_email: selected.customer_email,
           order_id: selected.id,
-          gift_code: giftCodes[0]?.trim() || "",
+          gift_code: giftCodeValue,
           items: selected.items,
           total: selected.total,
+          total_bs: selected.total_bs,
           payment_method: selected.payment_method,
         });
       } catch(e) { console.error("EmailJS error:", e); }
