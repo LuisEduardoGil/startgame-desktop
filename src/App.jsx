@@ -1584,6 +1584,57 @@ function AdminOrders() {
     URL.revokeObjectURL(url);
   };
 
+  const downloadSVG = () => {
+    const productCount = {};
+    exportOrders.forEach(o => {
+      (o.items||[]).forEach(item => {
+        productCount[item.name] = (productCount[item.name] || 0) + (item.quantity || 1);
+      });
+    });
+    const sorted = Object.entries(productCount).sort((a,b) => b[1]-a[1]);
+    const mLabel = new Date(exportYear, exportMonth).toLocaleDateString("es-VE", { month:"long", year:"numeric" });
+    const mLabelCap = mLabel.charAt(0).toUpperCase() + mLabel.slice(1);
+    const total = exportOrders.length;
+    const entregados = exportOrders.filter(o=>o.status==="delivered").length;
+    const rowH = 44;
+    const barMaxW = 260;
+    const maxVal = sorted[0]?.[1] || 1;
+    const svgH = 180 + sorted.length * rowH + 60;
+    const rows = sorted.map(([name, count], i) => {
+      const barW = Math.max(4, Math.round((count / maxVal) * barMaxW));
+      const y = 180 + i * rowH;
+      return (
+        '<rect x="160" y="' + (y+10) + '" width="' + barW + '" height="22" rx="5" fill="#7B6FFF" opacity="0.85"/>' +
+        '<text x="150" y="' + (y+26) + '" text-anchor="end" font-family="Arial,sans-serif" font-size="13" fill="#1a1a1a">' + name + '</text>' +
+        '<text x="' + (160+barW+8) + '" y="' + (y+26) + '" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#7B6FFF">' + count + '</text>'
+      );
+    }).join("");
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="560" height="' + svgH + '" style="background:#fff;">' +
+      '<rect width="560" height="' + svgH + '" fill="#ffffff"/>' +
+      '<rect x="0" y="0" width="560" height="8" fill="#7B6FFF"/>' +
+      '<text x="28" y="48" font-family="Arial,sans-serif" font-size="22" font-weight="bold" fill="#0a0a14">Resumen de Pedidos</text>' +
+      '<text x="28" y="72" font-family="Arial,sans-serif" font-size="14" fill="#666">' + mLabelCap + '</text>' +
+      '<rect x="28" y="90" width="140" height="50" rx="10" fill="#f4f4f8"/>' +
+      '<text x="98" y="118" text-anchor="middle" font-family="Arial,sans-serif" font-size="24" font-weight="bold" fill="#0a0a14">' + total + '</text>' +
+      '<text x="98" y="134" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#888">Total pedidos</text>' +
+      '<rect x="188" y="90" width="140" height="50" rx="10" fill="#f4f4f8"/>' +
+      '<text x="258" y="118" text-anchor="middle" font-family="Arial,sans-serif" font-size="24" font-weight="bold" fill="#00C896">' + entregados + '</text>' +
+      '<text x="258" y="134" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#888">Entregados</text>' +
+      '<rect x="348" y="90" width="140" height="50" rx="10" fill="#f4f4f8"/>' +
+      '<text x="418" y="118" text-anchor="middle" font-family="Arial,sans-serif" font-size="24" font-weight="bold" fill="#F3BA2F">' + (total-entregados) + '</text>' +
+      '<text x="418" y="134" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#888">Pendientes/Verif.</text>' +
+      '<line x1="28" y1="168" x2="532" y2="168" stroke="#eee" stroke-width="1"/>' +
+      '<text x="28" y="162" font-family="Arial,sans-serif" font-size="11" font-weight="bold" fill="#aaa">PEDIDOS POR PRODUCTO</text>' +
+      rows +
+      '<text x="28" y="' + (svgH-16) + '" font-family="Arial,sans-serif" font-size="10" fill="#ccc">Start Game · startgame.app</text>' +
+      '</svg>';
+    const blob = new Blob([svg], { type:"image/svg+xml;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "resumen_" + mLabel.replace(/ /g,"_") + ".svg"; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   // Group orders by date
   const today = new Date().toDateString();
   const grouped = orders.reduce((acc, order) => {
@@ -1706,20 +1757,28 @@ function AdminOrders() {
 
       {/* Export */}
       <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:16 }}>
-        <select value={exportMonth} onChange={e=>setExportMonth(Number(e.target.value))}
-          style={{ flex:1, padding:"8px 10px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:"#F0EDE8", fontSize:12, fontFamily:F, outline:"none" }}>
-          {["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"].map((m,i)=>(
-            <option key={i} value={i} style={{ background:"#1a1a2e" }}>{m}</option>
-          ))}
-        </select>
-        <select value={exportYear} onChange={e=>setExportYear(Number(e.target.value))}
-          style={{ width:80, padding:"8px 10px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:"#F0EDE8", fontSize:12, fontFamily:F, outline:"none" }}>
-          {[...new Set([exportYear])].map(y=>(
-            <option key={y} value={y} style={{ background:"#1a1a2e" }}>{y}</option>
-          ))}
-        </select>
-        <button onClick={downloadCSV} style={{ padding:"8px 14px", background:"rgba(0,200,150,0.12)", border:"1px solid rgba(0,200,150,0.35)", borderRadius:10, color:"#00C896", fontSize:12, fontWeight:700, fontFamily:F, cursor:"pointer", whiteSpace:"nowrap" }}>
-          ⬇ Descargar CSV
+        {(() => {
+          const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+          const opts = [];
+          for (let i = 0; i < 3; i++) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            opts.push({ month: d.getMonth(), year: d.getFullYear(), label: MONTHS[d.getMonth()] + " " + d.getFullYear() });
+          }
+          return (
+            <select value={exportMonth + "-" + exportYear}
+              onChange={e=>{ const [m,y]=e.target.value.split("-"); setExportMonth(Number(m)); setExportYear(Number(y)); }}
+              style={{ flex:1, padding:"8px 10px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:"#F0EDE8", fontSize:12, fontFamily:F, outline:"none" }}>
+              {opts.map((o,i)=>(
+                <option key={i} value={o.month + "-" + o.year} style={{ background:"#1a1a2e" }}>{o.label}</option>
+              ))}
+            </select>
+          );
+        })()}
+        <button onClick={downloadCSV} style={{ padding:"8px 12px", background:"rgba(0,200,150,0.12)", border:"1px solid rgba(0,200,150,0.35)", borderRadius:10, color:"#00C896", fontSize:12, fontWeight:700, fontFamily:F, cursor:"pointer", whiteSpace:"nowrap" }}>
+          CSV
+        </button>
+        <button onClick={downloadSVG} style={{ padding:"8px 12px", background:"rgba(123,111,255,0.12)", border:"1px solid rgba(123,111,255,0.35)", borderRadius:10, color:"#7B6FFF", fontSize:12, fontWeight:700, fontFamily:F, cursor:"pointer", whiteSpace:"nowrap" }}>
+          Resumen
         </button>
       </div>
 
