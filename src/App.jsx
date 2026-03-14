@@ -1411,8 +1411,8 @@ function OrderStatusScreen({ orderId, onBack }) {
             )}
 
             {order?.status === "delivered" ? (
-              <button onClick={onBack} style={{ marginTop:20, padding:"16px 40px", background:"linear-gradient(135deg,#7B6FFF,#4F8EFF)", border:"none", borderRadius:16, color:"#fff", fontSize:15, fontWeight:800, fontFamily:F, cursor:"pointer", boxShadow:"0 4px 24px rgba(123,111,255,0.45)", letterSpacing:"0.04em", display:"flex", alignItems:"center", gap:8 }}>
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/></svg>
+              <button onClick={onBack} style={{ marginTop:20, padding:"16px 40px", background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:10, color:COLORS.text, fontSize:13, fontWeight:800, fontFamily:F, cursor:"pointer", letterSpacing:"0.05em", backdropFilter:"blur(10px)", display:"flex", alignItems:"center", gap:8 }}>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.text} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/></svg>
   Ir al inicio
 </button>
             ) : (
