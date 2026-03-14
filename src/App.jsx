@@ -2356,14 +2356,28 @@ export default function App() {
         <div style={{ position:"absolute", top:250, right:-60, width:260, height:260, borderRadius:"50%", background:"rgba(60,140,255,0.09)", filter:"blur(70px)" }}/>
         <div style={{ position:"absolute", bottom:150, left:30, width:220, height:220, borderRadius:"50%", background:"rgba(255,255,255,0.04)", filter:"blur(60px)" }}/>
       </div>
-      <div ref={mainScrollRef} data-main-scroll style={{ position:"fixed", top:0, left:0, right:0, bottom:0, zIndex:1, overflowY:screen!=="nexus"?"auto":"hidden", paddingBottom:screen!=="nexus"?100:0 }}>
-        {deepLinkCard && <CardDetailScreen card={deepLinkCard} onBack={()=>{ setDeepLinkCard(null); window.location.hash = ""; }} onAddToCart={addToCart} onBuyNow={()=>{ setDeepLinkCard(null); window.location.hash = ""; setCartOpen(false); setCheckoutOpen(true); }} cart={cart} onCartClick={()=>setCartOpen(true)} tasa={GLOBAL_TASA}/>}
-        {!deepLinkCard && screen==="home"    && <HomeScreen setScreen={setScreen} onLogoTap={tapLogo} onAddToCart={addToCart} onBuyNow={()=>{ setCartOpen(false); setCheckoutOpen(true); }} cart={cart} onCartClick={()=>setCartOpen(true)}/>}
-        {!deepLinkCard && screen==="store"   && <StoreScreen onAddToCart={addToCart} onBuyNow={()=>{ setCartOpen(false); setCheckoutOpen(true); }} cart={cart} onCartClick={()=>setCartOpen(true)}/>}
-        {!deepLinkCard && screen==="nexus"   && <NexusScreen/>}
-        {screen==="profile" && <ProfileScreen profilePhoto={profilePhoto} setProfilePhoto={setProfilePhoto} session={session} setSession={setSession}/>}
+      <style>{`
+        @media (min-width: 600px) {
+          .sg-desktop-wrap { max-width: 480px !important; margin: 0 auto !important; position: relative !important; }
+          .sg-desktop-root { display: flex; justify-content: center; background: #08080E; }
+        }
+      `}</style>
+      <div ref={mainScrollRef} data-main-scroll className={screen!=="nexus" ? "sg-desktop-root" : ""} style={{ position:"fixed", top:0, left:0, right:0, bottom:0, zIndex:1, overflowY:screen!=="nexus"?"auto":"hidden", paddingBottom:screen!=="nexus"?100:0 }}>
+        <div className={screen!=="nexus" ? "sg-desktop-wrap" : ""} style={{ width:"100%", minHeight:"100%" }}>
+          {deepLinkCard && <CardDetailScreen card={deepLinkCard} onBack={()=>{ setDeepLinkCard(null); window.location.hash = ""; }} onAddToCart={addToCart} onBuyNow={()=>{ setDeepLinkCard(null); window.location.hash = ""; setCartOpen(false); setCheckoutOpen(true); }} cart={cart} onCartClick={()=>setCartOpen(true)} tasa={GLOBAL_TASA}/>}
+          {!deepLinkCard && screen==="home"    && <HomeScreen setScreen={setScreen} onLogoTap={tapLogo} onAddToCart={addToCart} onBuyNow={()=>{ setCartOpen(false); setCheckoutOpen(true); }} cart={cart} onCartClick={()=>setCartOpen(true)}/>}
+          {!deepLinkCard && screen==="store"   && <StoreScreen onAddToCart={addToCart} onBuyNow={()=>{ setCartOpen(false); setCheckoutOpen(true); }} cart={cart} onCartClick={()=>setCartOpen(true)}/>}
+          {!deepLinkCard && screen==="nexus"   && <NexusScreen/>}
+          {screen==="profile" && <ProfileScreen profilePhoto={profilePhoto} setProfilePhoto={setProfilePhoto} session={session} setSession={setSession}/>}
+        </div>
       </div>
-      {screen!=="nexus" && <BottomNav active={screen} setActive={setScreen} profilePhoto={profilePhoto} onProfilePhotoChange={setProfilePhoto} cartCount={cartCount} onCartClick={()=>setCartOpen(true)}/>}
+      {screen!=="nexus" && (
+        <div style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:200, display:"flex", justifyContent:"center" }}>
+          <div style={{ width:"100%", maxWidth:480 }}>
+            <BottomNav active={screen} setActive={setScreen} profilePhoto={profilePhoto} onProfilePhotoChange={setProfilePhoto} cartCount={cartCount} onCartClick={()=>setCartOpen(true)}/>
+          </div>
+        </div>
+      )}
       {screen==="nexus" && (
         <button onClick={()=>setScreen("home")} style={{ position:"fixed", bottom:80, left:16, zIndex:999, background:"rgba(10,10,20,0.55)", backdropFilter:"blur(12px)", border:"1px solid rgba(255,255,255,0.15)", borderRadius:20, color:"#F0EDE8", cursor:"pointer", fontSize:12, fontFamily:F, padding:"8px 16px", fontWeight:700 }}>← Volver</button>
       )}
