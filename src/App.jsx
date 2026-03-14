@@ -1507,11 +1507,13 @@ function AdminOrders() {
   const handleDeliver = async () => {
     if (!selected) return;
     const _items = selected.items || [];
-    const _allFilled = _items.every((_, i) => (giftCodes[i]||"").trim());
+    // Expand items by quantity to get all code keys
+    const _allKeys = _items.flatMap((item, ii) => Array.from({ length: item.quantity||1 }, (_, ui) => ({ key:`${ii}_${ui}`, name:item.name, amount:item.amount })));
+    const _allFilled = _allKeys.every(({ key }) => (giftCodes[key]||"").trim());
     if (!_allFilled) return;
-    const giftCodeValue = _items.length > 1
-      ? JSON.stringify(_items.map((item, i) => ({ name: item.name, amount: item.amount, code: giftCodes[i].trim() })))
-      : giftCodes[0].trim();
+    const giftCodeValue = _allKeys.length > 1
+      ? JSON.stringify(_allKeys.map(({ key, name, amount }) => ({ name, amount, code: giftCodes[key].trim() })))
+      : giftCodes[_allKeys[0].key].trim();
     setSending(true);
     await sb.update("orders", selected.id, { status:"delivered", gift_code: giftCodeValue, ...(orderNote.trim() ? { note: orderNote.trim() } : {}) });
     // Send email via EmailJS if customer has email
@@ -1599,16 +1601,24 @@ function AdminOrders() {
           )}
           {order.status==="verified" && (
             <div onClick={e=>e.stopPropagation()}>
-              {(order.items||[]).map((item, i) => (
-                <div key={i} style={{ marginBottom:8 }}>
-                  {order.items.length > 1 && <p style={{ color:"rgba(0,200,150,0.8)", fontSize:10, fontFamily:F, fontWeight:700, margin:"0 0 4px" }}>{item.name} — {item.amount}</p>}
-                  <GiftInput
-                    value={giftCodes[i]||""}
-                    onChange={e=>setGiftCodes(prev=>({...prev,[i]:e.target.value}))}
-                    placeholder={order.items.length > 1 ? `Código para ${item.name}...` : "Código gift card..."}
-                  />
-                </div>
-              ))}
+              {(order.items||[]).flatMap((item, itemIdx) =>
+                Array.from({ length: item.quantity || 1 }, (_, unitIdx) => {
+                  const key = `${itemIdx}_${unitIdx}`;
+                  const totalCodes = (order.items||[]).reduce((s, it) => s + (it.quantity||1), 0);
+                  return (
+                    <div key={key} style={{ marginBottom:8 }}>
+                      {totalCodes > 1 && <p style={{ color:"rgba(0,200,150,0.8)", fontSize:10, fontFamily:F, fontWeight:700, margin:"0 0 4px" }}>
+                        {item.name} — {item.amount}{item.quantity > 1 ? ` (${unitIdx+1} de ${item.quantity})` : ""}
+                      </p>}
+                      <GiftInput
+                        value={giftCodes[key]||""}
+                        onChange={e=>setGiftCodes(prev=>({...prev,[key]:e.target.value}))}
+                        placeholder={totalCodes > 1 ? `Código para ${item.name}...` : "Código gift card..."}
+                      />
+                    </div>
+                  );
+                })
+              )}
               <textarea
                 value={orderNote}
                 onChange={e=>setOrderNote(e.target.value)}
@@ -1617,9 +1627,9 @@ function AdminOrders() {
                 style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:"#F0EDE8", fontSize:12, fontFamily:F, outline:"none", resize:"none", marginBottom:8 }}
               />
               <button
-                disabled={!(order.items||[]).every((_,i)=>(giftCodes[i]||"").trim())||sending}
+                disabled={!(()=>{ const total=(order.items||[]).reduce((s,it)=>s+(it.quantity||1),0); const keys=[...(order.items||[])].flatMap((it,ii)=>Array.from({length:it.quantity||1},(_,ui)=>`${ii}_${ui}`)); return keys.every(k=>(giftCodes[k]||"").trim()); })()||sending}
                 onClick={handleDeliver}
-                style={{ width:"100%", padding:"10px", background:(order.items||[]).every((_,i)=>(giftCodes[i]||"").trim())?"linear-gradient(135deg,#00C896,#00A878)":"rgba(255,255,255,0.04)", border:"none", borderRadius:10, color:(order.items||[]).every((_,i)=>(giftCodes[i]||"").trim())?"#fff":"rgba(255,255,255,0.25)", fontSize:13, fontWeight:800, fontFamily:F, cursor:(order.items||[]).every((_,i)=>(giftCodes[i]||"").trim())?"pointer":"not-allowed", marginBottom:8 }}>
+                style={{ width:"100%", padding:"10px", background:(()=>{ const keys=[...(order.items||[])].flatMap((it,ii)=>Array.from({length:it.quantity||1},(_,ui)=>`${ii}_${ui}`)); return keys.every(k=>(giftCodes[k]||"").trim()); })()?"linear-gradient(135deg,#00C896,#00A878)":"rgba(255,255,255,0.04)", border:"none", borderRadius:10, color:(()=>{ const keys=[...(order.items||[])].flatMap((it,ii)=>Array.from({length:it.quantity||1},(_,ui)=>`${ii}_${ui}`)); return keys.every(k=>(giftCodes[k]||"").trim()); })()?"#fff":"rgba(255,255,255,0.25)", fontSize:13, fontWeight:800, fontFamily:F, cursor:(()=>{ const keys=[...(order.items||[])].flatMap((it,ii)=>Array.from({length:it.quantity||1},(_,ui)=>`${ii}_${ui}`)); return keys.every(k=>(giftCodes[k]||"").trim()); })()?"pointer":"not-allowed", marginBottom:8 }}>
                 {sending?"Enviando...":"✅ Entregar código"}
               </button>
               <button disabled={sending} onClick={e=>{ e.stopPropagation(); if(window.confirm("¿Estás seguro que deseas marcar entrega por WhatsApp?")) handleDeliverWS(); }} style={{ width:"100%", padding:"10px", background:"linear-gradient(135deg,#25D366,#1da851)", border:"none", borderRadius:10, color:"#fff", fontSize:13, fontWeight:800, fontFamily:F, cursor:"pointer" }}>
