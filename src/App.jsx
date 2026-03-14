@@ -1096,7 +1096,7 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
               </div>
             </div>
             {isGuest && !isValidEmail && (
-              <p style={{ color:"#F3BA2F", fontSize:11, fontFamily:F, marginBottom:10, textAlign:"center" }}>⚠️ Ingresa tu correo arriba para continuar</p>
+              <p style={{ color:"#F3BA2F", fontSize:11, fontFamily:F, marginBottom:10, textAlign:"center" }}>⚠️ Ingresa tu correo arriba para recibir el código</p>
             )}
             {(!isGuest || isValidEmail) && (
               paypalSdkReady
@@ -1575,8 +1575,7 @@ function AdminOrders() {
       const estado = { pending:"Pendiente", verified:"Verificado", delivered:"Entregado" }[o.status] || o.status;
       rows.push([o.id?.slice(0,8).toUpperCase(), fecha, o.customer_email||o.customer_ref||"", metodo, productos, o.total||"", totalBs, estado]);
     });
-    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("
-");
+    const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(",")).join("\n");
     const blob = new Blob(["﻿"+csv], { type:"text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
