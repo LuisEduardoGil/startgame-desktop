@@ -608,8 +608,16 @@ function AutoScrollCards({ cards, onCardClick }) {
 function LoUltimo() {
   const posts = usePosts();
   const activos = posts.filter(p => p.activo !== false).slice(0, 3);
-  const [preview, setPreview] = useState(null); // post seleccionado
-  const [visible, setVisible] = useState(false); // controla animación
+  const [preview, setPreview] = useState(null);
+  const [visible, setVisible] = useState(false);
+  const [ready, setReady] = useState(false);
+
+  // Cuando llegan los posts activos, dispara animación de entrada
+  useEffect(() => {
+    if (activos.length > 0) {
+      requestAnimationFrame(() => requestAnimationFrame(() => setReady(true)));
+    }
+  }, [activos.length]);
 
   const openPreview = (post) => {
     setPreview(post);
@@ -620,12 +628,17 @@ function LoUltimo() {
     setTimeout(() => setPreview(null), 280);
   };
 
-  if (!activos.length) return null;
   return (
     <div style={{ marginTop:28 }}>
+      <style>{`
+        @keyframes shimmer {
+          0% { background-position: -400px 0; }
+          100% { background-position: 400px 0; }
+        }
+      `}</style>
+
       {/* Header */}
       <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:10 }}>
-        {/* Logo Instagram */}
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
           <defs>
             <linearGradient id="ig" x1="0%" y1="100%" x2="100%" y2="0%">
@@ -643,15 +656,36 @@ function LoUltimo() {
         <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, margin:0, letterSpacing:"0.1em" }}>ÚLTIMAS PUBLICACIONES</p>
       </div>
 
-      {/* Contenedor con imágenes */}
-      <div style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:20, padding:10, display:"flex", gap:8 }}>
-        {activos.map(post => (
-          <div key={post.id} onClick={()=>openPreview(post)}
-            style={{ flex:1, borderRadius:10, overflow:"hidden", cursor:"pointer", background:"#0d0d1a" }}>
-            <img src={post.img_url} alt={post.titulo||""} style={{ width:"100%", height:"auto", display:"block" }}/>
-          </div>
-        ))}
-      </div>
+      {/* Skeleton mientras carga */}
+      {!ready && (
+        <div style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:20, padding:10, display:"flex", gap:8 }}>
+          {[0,1,2].map(i => (
+            <div key={i} style={{ flex:1, borderRadius:10, aspectRatio:"1/1",
+              background:"linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 75%)",
+              backgroundSize:"400px 100%",
+              animation:"shimmer 1.4s ease-in-out infinite",
+              animationDelay:`${i*0.15}s`
+            }}/>
+          ))}
+        </div>
+      )}
+
+      {/* Contenedor con imágenes — fade+slide al entrar */}
+      {activos.length > 0 && (
+        <div style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:20, padding:10, display:"flex", gap:8,
+          opacity: ready ? 1 : 0,
+          transform: ready ? "translateY(0)" : "translateY(10px)",
+          transition: "opacity 0.35s ease, transform 0.35s ease",
+          position: ready ? "relative" : "absolute", pointerEvents: ready ? "auto" : "none",
+        }}>
+          {activos.map(post => (
+            <div key={post.id} onClick={()=>openPreview(post)}
+              style={{ flex:1, borderRadius:10, overflow:"hidden", cursor:"pointer", background:"#0d0d1a" }}>
+              <img src={post.img_url} alt={post.titulo||""} style={{ width:"100%", height:"auto", display:"block" }}/>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Modal preview estilo Instagram */}
       {preview && (
