@@ -1195,7 +1195,13 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
                       </div>
                     : <span style={{ fontSize:22, flexShrink:0 }}>{selected.icon}</span>
                   }
-                  <p style={{ color:selected.color, fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:0, flex:1 }}>DATOS PARA TRANSFERIR {useUsdt ? fmtBs(null, tasa, totalUsdt) : fmtBs(total, tasa)}</p>
+                  <p style={{ color:selected.color, fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:0, flex:1 }}>DATOS PARA TRANSFERIR {
+                    selected.id === "binance"
+                      ? `${(useUsdt ? totalUsdt : total).toFixed(2)} USDT`
+                      : selected.id === "zinli"
+                        ? `$${(useUsdt ? totalUsdt : total).toFixed(2)} USD`
+                        : useUsdt ? fmtBs(null, tasa, totalUsdt) : fmtBs(total, tasa)
+                  }</p>
                 </div>
                 {selected.info.map((row, i) => (
                   <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom: i < selected.info.length-1 ? 10 : 0 }}>
