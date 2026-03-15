@@ -611,18 +611,18 @@ function SocialPostCard({ post }) {
   return (
     <div style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:20, overflow:"hidden", marginBottom:16 }}>
       {/* Media */}
-      <div style={{ width:"100%", aspectRatio:"4/3", background:"#0d0d1a", position:"relative", overflow:"hidden" }}>
+      <div style={{ width:"100%", background:"#0d0d1a", position:"relative", overflow:"hidden" }}>
         {isVideo ? (
           <video
             src={post.media_url}
             autoPlay muted loop playsInline
-            style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }}
+            style={{ width:"100%", height:"auto", display:"block", maxHeight:"80vh", objectFit:"contain" }}
           />
         ) : (
           <img
             src={post.media_url}
             alt={post.caption||""}
-            style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }}
+            style={{ width:"100%", height:"auto", display:"block", maxHeight:"80vh", objectFit:"contain" }}
           />
         )}
         {/* Instagram badge */}
@@ -2474,10 +2474,10 @@ function AdminPosts() {
           </div>
         ) : form.media_url ? (
           <div>
-            <div style={{ borderRadius:10, overflow:"hidden", aspectRatio:"4/3", background:"#0d0d1a", marginBottom:8 }}>
+            <div style={{ borderRadius:10, overflow:"hidden", background:"#0d0d1a", marginBottom:8 }}>
               {/\.(mp4|webm|mov|ogg)(\?|$)/i.test(form.media_url)
-                ? <video src={form.media_url} autoPlay muted loop playsInline style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
-                : <img src={form.media_url} style={{ width:"100%", height:"100%", objectFit:"cover" }} alt="preview"/>}
+                ? <video src={form.media_url} autoPlay muted loop playsInline style={{ width:"100%", height:"auto", display:"block", maxHeight:"60vh", objectFit:"contain" }}/>
+                : <img src={form.media_url} style={{ width:"100%", height:"auto", display:"block", maxHeight:"60vh", objectFit:"contain" }} alt="preview"/>}
             </div>
             <p style={{ color:"rgba(255,255,255,0.4)", fontSize:11, fontFamily:F, margin:0 }}>Toca para cambiar el archivo</p>
           </div>
