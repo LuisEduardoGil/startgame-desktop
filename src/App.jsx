@@ -367,21 +367,18 @@ function ProfileIcon({ active, photo }) {
   if (photo) return <div style={{ width:26, height:26, borderRadius:"50%", border:`2px solid ${c}`, overflow:"hidden" }}><img src={photo} style={{ width:"100%", height:"100%", objectFit:"cover" }}/></div>;
   return <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={active?2.2:1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
 }
-function BottomNav({ active, setActive, profilePhoto, onProfilePhotoChange, cartCount, onCartClick }) {
-  const fileRef = useRef(null);
-  const items = [{ id:"home", label:"Inicio" }, { id:"store", label:"Tienda" }, { id:"nexus", label:"Nexus IA" }, { id:"profile", label:"Perfil" }];
+function BottomNav({ active, setActive, cartCount, onCartClick }) {
+  const items = [{ id:"home", label:"Inicio" }, { id:"store", label:"Tienda" }, { id:"nexus", label:"Nexus IA" }];
   return (
     <div style={{ position:"fixed", bottom:16, left:"50%", transform:"translateX(-50%)", width:"calc(100% - 32px)", background:"rgba(20,20,30,0.75)", backdropFilter:"blur(32px) saturate(180%)", WebkitBackdropFilter:"blur(32px) saturate(180%)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:20, display:"flex", justifyContent:"space-around", padding:"10px 0", zIndex:200, boxShadow:"0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
-      <input ref={fileRef} type="file" accept="image/*" style={{ display:"none" }} onChange={e=>{ const f=e.target.files[0]; if(f) onProfilePhotoChange(URL.createObjectURL(f)); }}/>
       {items.map(item => {
         const on = active === item.id;
         return (
-          <button key={item.id} onClick={item.id==="profile"?(on?()=>fileRef.current?.click():()=>setActive("profile")):()=>setActive(item.id)} style={{ background:"none", border:"none", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:5, padding:"4px 16px" }}>
+          <button key={item.id} onClick={()=>setActive(item.id)} style={{ background:"none", border:"none", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:5, padding:"4px 16px" }}>
             <span style={{ filter:on?`drop-shadow(0 0 6px ${COLORS.accent})`:"none", transition:"filter 0.2s", position:"relative" }}>
               {item.id==="home" && <HomeIcon active={on}/>}
               {item.id==="store" && <StoreIcon active={on}/>}
               {item.id==="nexus" && <NexusIcon active={on}/>}
-              {item.id==="profile" && <ProfileIcon active={on} photo={profilePhoto}/>}
             </span>
             <span style={{ fontSize:10, fontFamily:F, letterSpacing:"0.05em", fontWeight:on?700:400, color:on?COLORS.accent:COLORS.textMuted }}>{item.label}</span>
             {on && <div style={{ width:4, height:4, borderRadius:"50%", background:COLORS.accent }}/>}
@@ -2494,7 +2491,7 @@ export default function App() {
       {screen!=="nexus" && (
         <div style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:200, display:"flex", justifyContent:"center" }}>
           <div style={{ width:"100%", maxWidth:480 }}>
-            <BottomNav active={screen} setActive={setScreen} profilePhoto={profilePhoto} onProfilePhotoChange={setProfilePhoto} cartCount={cartCount} onCartClick={()=>setCartOpen(true)}/>
+            <BottomNav active={screen} setActive={setScreen} cartCount={cartCount} onCartClick={()=>setCartOpen(true)}/>
           </div>
         </div>
       )}
