@@ -713,6 +713,7 @@ function NotifPanel({ onClose }) {
               <button onClick={closeModal} style={{ background:"none", border:"none", color:"rgba(255,255,255,0.5)", fontSize:22, cursor:"pointer", lineHeight:1, padding:0 }}>×</button>
             </div>
             <div style={{ padding:"18px" }}>
+              {selected.created_at && <p style={{ color:"rgba(255,255,255,0.3)", fontSize:11, fontFamily:F, margin:"0 0 8px" }}>{new Date(selected.created_at).toLocaleDateString("es-VE", { day:"2-digit", month:"long", year:"numeric" })}</p>}
               <h3 style={{ color:"#fff", fontSize:16, fontWeight:800, fontFamily:F, margin:"0 0 12px", lineHeight:1.3 }}>{selected.titulo}</h3>
               {selected.cuerpo && <p style={{ color:"#F0EDE8", fontSize:14, fontFamily:F, margin:"0 0 16px", lineHeight:1.7, whiteSpace:"pre-wrap" }}>{selected.cuerpo}</p>}
               {selected.btn_label && selected.btn_url && (
