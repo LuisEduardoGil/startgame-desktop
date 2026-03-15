@@ -1,9 +1,0 @@
-{
-  "redirects": [
-    {
-      "source": "/p/:slug",
-      "destination": "https://zacdqpvhnlgtbgurfqac.supabase.co/functions/v1/product-preview/:slug",
-      "permanent": false
-    }
-  ]
-}
