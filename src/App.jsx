@@ -2756,12 +2756,16 @@ export default function App() {
         <div style={{ position:"absolute", bottom:150, left:30, width:220, height:220, borderRadius:"50%", background:"rgba(255,255,255,0.04)", filter:"blur(60px)" }}/>
       </div>
       <style>{`
+        html, body {
+          overscroll-behavior: none;
+          overflow: hidden;
+        }
         @media (min-width: 600px) {
           .sg-desktop-wrap { max-width: 480px !important; margin: 0 auto !important; position: relative !important; }
           .sg-desktop-root { display: flex; justify-content: center; background: #08080E; }
         }
       `}</style>
-      <div ref={mainScrollRef} data-main-scroll className={screen!=="nexus" ? "sg-desktop-root" : ""} style={{ position:"fixed", top:0, left:0, right:0, bottom:0, zIndex:1, overflowY:screen!=="nexus"?"auto":"hidden", paddingBottom:screen!=="nexus"?100:0 }}>
+      <div ref={mainScrollRef} data-main-scroll className={screen!=="nexus" ? "sg-desktop-root" : ""} style={{ position:"fixed", top:0, left:0, right:0, bottom:0, zIndex:1, overflowY:screen!=="nexus"?"auto":"hidden", overscrollBehavior:"none", WebkitOverflowScrolling:"touch", paddingBottom:screen!=="nexus"?100:0 }}>
         <div className={screen!=="nexus" ? "sg-desktop-wrap" : ""} style={{ width:"100%", minHeight:"100%" }}>
           {deepLinkCard && <CardDetailScreen card={deepLinkCard} onBack={()=>{ setDeepLinkCard(null); window.location.hash = ""; }} onAddToCart={addToCart} onBuyNow={()=>{ setDeepLinkCard(null); window.location.hash = ""; setCartOpen(false); setCheckoutOpen(true); }} cart={cart} onCartClick={()=>setCartOpen(true)} tasa={GLOBAL_TASA}/>}
           {!deepLinkCard && screen==="home"    && <HomeScreen setScreen={setScreen} onLogoTap={tapLogo} onAddToCart={addToCart} onBuyNow={()=>{ setCartOpen(false); setCheckoutOpen(true); }} cart={cart} onCartClick={()=>setCartOpen(true)}/>}
