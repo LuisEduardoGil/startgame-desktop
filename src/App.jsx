@@ -104,7 +104,7 @@ const sb = {
     return r.json();
   },
   async getAll(table) {
-    const order = table === "orders" ? "?order=created_at.desc" : table === "posts" ? "?order=order.asc" : "?order=name.asc";
+    const order = table === "orders" ? "?order=created_at.desc" : "?order=name.asc";
     const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}${order}&select=*`, {
       headers: HEADERS,
     });
@@ -182,21 +182,6 @@ function useTasa() {
   }, []);
   return tasa;
 }
-
-// ── Global posts store ──
-let GLOBAL_POSTS = [];
-const postsListeners = new Set();
-function setGlobalPosts(p) { GLOBAL_POSTS = p; postsListeners.forEach(fn => fn(p)); }
-function usePosts() {
-  const [posts, setPosts] = useState(GLOBAL_POSTS);
-  useEffect(() => {
-    postsListeners.add(setPosts);
-    sb.getAll("posts").then(rows => { if (Array.isArray(rows)) { setGlobalPosts(rows); setPosts(rows); } }).catch(()=>{});
-    return () => postsListeners.delete(setPosts);
-  }, []);
-  return posts;
-}
-
 
 function fmtBs(usd, tasa, usdtOverride) {
   const base = usdtOverride != null ? usdtOverride : usd;
@@ -605,64 +590,10 @@ function AutoScrollCards({ cards, onCardClick }) {
   );
 }
 
-/* ── Social Feed Component ── */
-function SocialPostCard({ post }) {
-  const isVideo = /\.(mp4|webm|mov|ogg)(\?|$)/i.test(post.media_url||"");
-  return (
-    <div style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:20, overflow:"hidden", marginBottom:16 }}>
-      {/* Media */}
-      <div style={{ width:"100%", background:"#0d0d1a", position:"relative", overflow:"hidden" }}>
-        {isVideo ? (
-          <video
-            src={post.media_url}
-            autoPlay muted loop playsInline
-            style={{ width:"100%", height:"auto", display:"block", maxHeight:"80vh", objectFit:"contain" }}
-          />
-        ) : (
-          <img
-            src={post.media_url}
-            alt={post.caption||""}
-            style={{ width:"100%", height:"auto", display:"block", maxHeight:"80vh", objectFit:"contain" }}
-          />
-        )}
-        {/* Instagram badge */}
-        <div style={{ position:"absolute", top:12, right:12, background:"rgba(0,0,0,0.55)", backdropFilter:"blur(8px)", borderRadius:8, padding:"4px 8px", display:"flex", alignItems:"center", gap:5 }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-            <rect x="2" y="2" width="20" height="20" rx="5" stroke="#fff" strokeWidth="1.8"/>
-            <circle cx="12" cy="12" r="4" stroke="#fff" strokeWidth="1.8"/>
-            <circle cx="17.5" cy="6.5" r="1" fill="#fff"/>
-          </svg>
-          <span style={{ color:"#fff", fontSize:10, fontFamily:F, fontWeight:700 }}>Instagram</span>
-        </div>
-      </div>
-      {/* Caption + link */}
-      <div style={{ padding:"14px 16px" }}>
-        {post.caption && (
-          <p style={{ color:COLORS.textMuted, fontSize:13, fontFamily:F, margin:"0 0 12px", lineHeight:1.5,
-            display:"-webkit-box", WebkitLineClamp:3, WebkitBoxOrient:"vertical", overflow:"hidden" }}>
-            {post.caption}
-          </p>
-        )}
-        {post.link && (
-          <a href={post.link} target="_blank" rel="noopener noreferrer"
-            style={{ display:"inline-flex", alignItems:"center", gap:6, color:"#7B6FFF", fontSize:12, fontFamily:F, fontWeight:700, textDecoration:"none" }}>
-            Ver en Instagram
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#7B6FFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-            </svg>
-          </a>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function HomeScreen({ setScreen, onLogoTap, onAddToCart, onBuyNow, cart, onCartClick }) {
   const tasa = useTasa();
   const products = useProducts();
   const banner = useBanner();
-  const posts = usePosts();
-  const activePosts = posts.filter(p => p.active !== false).slice(0, 3);
   const active = products.filter(p => p.active !== false);
   const [detailCard, setDetailCard] = useState(null);
   if (detailCard) return <CardDetailScreen card={detailCard} onBack={()=>setDetailCard(null)} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} tasa={tasa}/>;
@@ -686,20 +617,6 @@ function HomeScreen({ setScreen, onLogoTap, onAddToCart, onBuyNow, cart, onCartC
 
       <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, marginBottom:12, letterSpacing:"0.1em" }}>POPULARES EN LA TIENDA</p>
       <AutoScrollCards cards={active.filter(p=>p.featured).slice(0,6)} onCardClick={setDetailCard}/>
-
-      {activePosts.length > 0 && (
-        <div style={{ marginTop:32 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:16 }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-              <rect x="2" y="2" width="20" height="20" rx="5" stroke="#7B6FFF" strokeWidth="2"/>
-              <circle cx="12" cy="12" r="4" stroke="#7B6FFF" strokeWidth="2"/>
-              <circle cx="17.5" cy="6.5" r="1.2" fill="#7B6FFF"/>
-            </svg>
-            <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, margin:0, letterSpacing:"0.1em" }}>ÚLTIMAS PUBLICACIONES</p>
-          </div>
-          {activePosts.map(post => <SocialPostCard key={post.id} post={post}/>)}
-        </div>
-      )}
     </div>
   );
 }
@@ -1522,7 +1439,7 @@ function AdminPanel({ onExit }) {
         </div>
         {/* Tabs */}
         <div style={{ display:"flex", gap:0 }}>
-          {[{id:"orders",label:"Pedidos"},{id:"products",label:"Productos"},{id:"redes",label:"Redes"},{id:"settings",label:"Ajustes"}].map(t=>(
+          {[{id:"orders",label:"Pedidos"},{id:"products",label:"Productos"},{id:"settings",label:"Ajustes"}].map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id)} style={{ flex:1, padding:"10px 0", background:"none", border:"none", borderBottom:`2px solid ${tab===t.id?"#7B6FFF":"transparent"}`, color:tab===t.id?"#7B6FFF":"#F0EDE8", fontSize:12, fontWeight:700, fontFamily:F, cursor:"pointer", transition:"all 0.15s" }}>{t.label}</button>
           ))}
         </div>
@@ -1530,7 +1447,6 @@ function AdminPanel({ onExit }) {
       <div style={{ overflowY:"auto", maxHeight:"calc(100vh - 100px)" }}>
         {tab==="orders"   && <AdminOrders/>}
         {tab==="products" && <AdminProducts/>}
-        {tab==="redes"    && <AdminPosts/>}
         {tab==="settings" && <AdminSettings/>}
       </div>
     </div>
@@ -2361,204 +2277,6 @@ function AdminSettings() {
       <BannerEditor/>
 
       <PaymentMethodsEditor/>
-    </div>
-  );
-}
-
-
-/* ── Admin: Posts (Redes) Tab ── */
-function AdminPosts() {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ media_url:"", caption:"", link:"", order:0, active:true });
-  const [editing, setEditing] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-
-  const load = async () => {
-    setLoading(true);
-    const rows = await sb.getAll("posts");
-    if (Array.isArray(rows)) { setPosts(rows); setGlobalPosts(rows); }
-    setLoading(false);
-  };
-  useEffect(() => { load(); }, []);
-
-  const openAdd = () => {
-    setEditing(null);
-    setForm({ media_url:"", caption:"", link:"", order: posts.length + 1, active:true });
-    setShowForm(true);
-  };
-  const openEdit = (p) => {
-    setEditing(p);
-    setForm({ media_url:p.media_url||"", caption:p.caption||"", link:p.link||"", order:p.order||0, active:p.active!==false });
-    setShowForm(true);
-  };
-  const cancel = () => { setShowForm(false); setEditing(null); };
-
-  const save = async () => {
-    if (!form.media_url.trim()) return;
-    setSaving(true);
-    const payload = { media_url:form.media_url.trim(), caption:form.caption.trim(), link:form.link.trim(), order:Number(form.order)||0, active:form.active };
-    if (editing) { await sb.update("posts", editing.id, payload); }
-    else { await sb.insert("posts", payload); }
-    setSaving(false);
-    setShowForm(false);
-    setEditing(null);
-    load();
-  };
-
-  const remove = async (id) => {
-    if (!window.confirm("¿Eliminar esta publicación?")) return;
-    await sb.delete("posts", id);
-    load();
-  };
-
-  const toggleActive = async (p) => {
-    await sb.update("posts", p.id, { active: !p.active });
-    load();
-  };
-
-  const fileRef = useRef(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState("");
-
-  const uploadFile = async (file) => {
-    setUploading(true);
-    setUploadError("");
-    try {
-      const ext = file.name.split(".").pop();
-      const fileName = `post_${Date.now()}.${ext}`;
-      const r = await fetch(`${SUPABASE_URL}/storage/v1/object/posts/${fileName}`, {
-        method: "POST",
-        headers: {
-          "apikey": SUPABASE_KEY,
-          "Authorization": `Bearer ${SUPABASE_KEY}`,
-          "Content-Type": file.type,
-          "x-upsert": "true",
-        },
-        body: file,
-      });
-      if (!r.ok) { const e = await r.json(); throw new Error(e.message || "Error al subir"); }
-      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/posts/${fileName}`;
-      setForm(p => ({ ...p, media_url: publicUrl }));
-    } catch(e) {
-      setUploadError(e.message || "Error al subir el archivo");
-    }
-    setUploading(false);
-  };
-
-  const inputStyle = { width:"100%", boxSizing:"border-box", padding:"10px 12px", background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:"#fff", fontSize:13, fontFamily:F, outline:"none", marginBottom:10 };
-  const labelStyle = { color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 4px", display:"block" };
-
-  if (showForm) return (
-    <div style={{ padding:16 }}>
-      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:20 }}>
-        <button onClick={cancel} style={{ background:"none", border:"none", color:"#7B6FFF", fontSize:20, cursor:"pointer", padding:0 }}>←</button>
-        <h3 style={{ color:"#fff", fontSize:15, fontWeight:800, fontFamily:F, margin:0 }}>{editing ? "Editar publicación" : "Nueva publicación"}</h3>
-      </div>
-
-      {/* Media upload / URL */}
-      <label style={labelStyle}>Imagen o video</label>
-      <input ref={fileRef} type="file" accept="image/*,video/*" style={{ display:"none" }}
-        onChange={e=>{ const f=e.target.files[0]; if(f) uploadFile(f); }}/>
-
-      {/* Upload zone */}
-      <div
-        onClick={()=>!uploading && fileRef.current?.click()}
-        style={{ width:"100%", boxSizing:"border-box", border:`2px dashed ${uploading?"#7B6FFF":"rgba(255,255,255,0.15)"}`, borderRadius:14, padding:"20px 16px", marginBottom:10, textAlign:"center", cursor:uploading?"wait":"pointer", background:"rgba(255,255,255,0.02)", transition:"border 0.2s" }}>
-        {uploading ? (
-          <div>
-            <div style={{ width:32, height:32, border:"3px solid rgba(123,111,255,0.3)", borderTop:"3px solid #7B6FFF", borderRadius:"50%", margin:"0 auto 8px", animation:"spin 0.8s linear infinite" }}/>
-            <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-            <p style={{ color:"#7B6FFF", fontSize:12, fontFamily:F, margin:0 }}>Subiendo...</p>
-          </div>
-        ) : form.media_url ? (
-          <div>
-            <div style={{ borderRadius:10, overflow:"hidden", background:"#0d0d1a", marginBottom:8 }}>
-              {/\.(mp4|webm|mov|ogg)(\?|$)/i.test(form.media_url)
-                ? <video src={form.media_url} autoPlay muted loop playsInline style={{ width:"100%", height:"auto", display:"block", maxHeight:"60vh", objectFit:"contain" }}/>
-                : <img src={form.media_url} style={{ width:"100%", height:"auto", display:"block", maxHeight:"60vh", objectFit:"contain" }} alt="preview"/>}
-            </div>
-            <p style={{ color:"rgba(255,255,255,0.4)", fontSize:11, fontFamily:F, margin:0 }}>Toca para cambiar el archivo</p>
-          </div>
-        ) : (
-          <div>
-            <div style={{ fontSize:32, marginBottom:8 }}>📁</div>
-            <p style={{ color:"#F0EDE8", fontSize:13, fontFamily:F, fontWeight:700, margin:"0 0 4px" }}>Toca para subir</p>
-            <p style={{ color:"rgba(255,255,255,0.35)", fontSize:11, fontFamily:F, margin:0 }}>Imagen o video · JPG, PNG, MP4, MOV...</p>
-          </div>
-        )}
-      </div>
-
-      {uploadError && <p style={{ color:"#FF4D6A", fontSize:11, fontFamily:F, margin:"0 0 10px" }}>⚠ {uploadError}</p>}
-
-      {/* Manual URL fallback */}
-      <label style={labelStyle}>O pega una URL directa <span style={{ color:"rgba(255,255,255,0.3)" }}>(opcional)</span></label>
-      <input value={form.media_url} onChange={e=>setForm(p=>({...p,media_url:e.target.value}))} placeholder="https://..." style={inputStyle}/>
-
-      <label style={labelStyle}>Caption</label>
-      <textarea value={form.caption} onChange={e=>setForm(p=>({...p,caption:e.target.value}))} placeholder="Escribe el caption del post..." rows={3}
-        style={{ ...inputStyle, resize:"none" }}/>
-
-      <label style={labelStyle}>Link a Instagram <span style={{ color:"rgba(255,255,255,0.3)" }}>(opcional)</span></label>
-      <input value={form.link} onChange={e=>setForm(p=>({...p,link:e.target.value}))} placeholder="https://instagram.com/p/..." style={inputStyle}/>
-
-      <label style={labelStyle}>Orden <span style={{ color:"rgba(255,255,255,0.3)" }}>(número — menor aparece primero)</span></label>
-      <input type="number" value={form.order} onChange={e=>setForm(p=>({...p,order:e.target.value}))} style={{ ...inputStyle, width:100 }}/>
-
-      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
-        <span style={{ color:"#F0EDE8", fontSize:10, fontFamily:F }}>Visible en la app</span>
-        <button onClick={()=>setForm(p=>({...p,active:!p.active}))} style={{ width:40, height:22, borderRadius:11, background:form.active?"#7B6FFF":"rgba(255,255,255,0.12)", border:"none", cursor:"pointer", position:"relative", transition:"background 0.2s" }}>
-          <span style={{ position:"absolute", top:3, left:form.active?20:3, width:16, height:16, borderRadius:"50%", background:"#fff", transition:"left 0.2s" }}/>
-        </button>
-      </div>
-
-      <div style={{ display:"flex", gap:8 }}>
-        <button onClick={cancel} style={{ flex:1, padding:"10px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:"#F0EDE8", fontSize:12, fontFamily:F, cursor:"pointer" }}>Cancelar</button>
-        <button disabled={saving||uploading||!form.media_url.trim()} onClick={save}
-          style={{ flex:2, padding:"10px", background:(!saving&&!uploading&&form.media_url.trim())?"linear-gradient(135deg,#7B6FFF,#4F8EFF)":"rgba(255,255,255,0.05)", border:"none", borderRadius:10, color:(!saving&&!uploading&&form.media_url.trim())?"#fff":"rgba(255,255,255,0.3)", fontSize:12, fontWeight:800, fontFamily:F, cursor:(!saving&&!uploading&&form.media_url.trim())?"pointer":"not-allowed" }}>
-          {saving ? "Guardando..." : uploading ? "Subiendo..." : "💾 Guardar"}
-        </button>
-      </div>
-    </div>
-  );
-
-  return (
-    <div style={{ padding:16 }}>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-        <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.08em", margin:0 }}>📸 PUBLICACIONES ({posts.filter(p=>p.active!==false).length} activas)</p>
-        <button onClick={openAdd} style={{ padding:"7px 14px", background:"linear-gradient(135deg,#7B6FFF,#4F8EFF)", border:"none", borderRadius:10, color:"#fff", fontSize:12, fontWeight:700, fontFamily:F, cursor:"pointer" }}>+ Nueva</button>
-      </div>
-
-      {loading ? <p style={{ color:"rgba(255,255,255,0.5)", textAlign:"center", padding:"40px 0", fontFamily:F }}>Cargando...</p>
-      : posts.length === 0 ? <p style={{ color:"#F0EDE8", textAlign:"center", padding:"40px 0", fontFamily:F }}>Sin publicaciones aún</p>
-      : posts.map(post => {
-        const isVideo = /\.(mp4|webm|mov|ogg)(\?|$)/i.test(post.media_url||"");
-        return (
-          <div key={post.id} style={{ display:"flex", gap:12, background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:14, padding:12, marginBottom:10, alignItems:"flex-start" }}>
-            <div style={{ width:64, height:64, borderRadius:10, overflow:"hidden", flexShrink:0, background:"#0d0d1a" }}>
-              {isVideo
-                ? <video src={post.media_url} muted playsInline style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
-                : <img src={post.media_url} style={{ width:"100%", height:"100%", objectFit:"cover" }} alt=""/>}
-            </div>
-            <div style={{ flex:1, minWidth:0 }}>
-              <p style={{ color:"#fff", fontSize:12, fontFamily:F, fontWeight:600, margin:"0 0 3px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                {post.caption || <span style={{ color:"rgba(255,255,255,0.3)" }}>Sin caption</span>}
-              </p>
-              <p style={{ color:"rgba(255,255,255,0.4)", fontSize:10, fontFamily:F, margin:"0 0 8px" }}>
-                #{post.order} · {isVideo ? "🎬 Video" : "🖼 Imagen"} · {post.active!==false ? <span style={{ color:"#00C896" }}>Activo</span> : <span style={{ color:"#FF4D6A" }}>Oculto</span>}
-              </p>
-              <div style={{ display:"flex", gap:6 }}>
-                <button onClick={()=>toggleActive(post)} style={{ padding:"5px 10px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:8, color:"#F0EDE8", fontSize:11, fontFamily:F, cursor:"pointer" }}>
-                  {post.active!==false ? "Ocultar" : "Mostrar"}
-                </button>
-                <button onClick={()=>openEdit(post)} style={{ padding:"5px 10px", background:"rgba(123,111,255,0.12)", border:"1px solid rgba(123,111,255,0.3)", borderRadius:8, color:"#7B6FFF", fontSize:11, fontFamily:F, cursor:"pointer" }}>Editar</button>
-                <button onClick={()=>remove(post.id)} style={{ padding:"5px 10px", background:"rgba(255,77,106,0.08)", border:"1px solid rgba(255,77,106,0.25)", borderRadius:8, color:"#FF4D6A", fontSize:11, fontFamily:F, cursor:"pointer" }}>Eliminar</button>
-              </div>
-            </div>
-          </div>
-        );
-      })}
     </div>
   );
 }
