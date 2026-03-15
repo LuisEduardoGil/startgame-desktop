@@ -384,18 +384,18 @@ function ProfileIcon({ active, photo }) {
 function BottomNav({ active, setActive, cartCount, onCartClick }) {
   const items = [{ id:"home", label:"Inicio" }, { id:"store", label:"Tienda" }, { id:"nexus", label:"Nexus IA" }];
   return (
-    <div style={{ position:"fixed", bottom:16, left:"50%", transform:"translateX(-50%)", width:"calc(100% - 32px)", background:"rgba(20,20,30,0.75)", backdropFilter:"blur(32px) saturate(180%)", WebkitBackdropFilter:"blur(32px) saturate(180%)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:20, display:"flex", justifyContent:"space-around", padding:"10px 0", zIndex:200, boxShadow:"0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+    <div style={{ position:"fixed", bottom:10, left:"50%", transform:"translateX(-50%)", width:"calc(100% - 32px)", background:"rgba(20,20,30,0.80)", backdropFilter:"blur(32px) saturate(180%)", WebkitBackdropFilter:"blur(32px) saturate(180%)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:18, display:"flex", justifyContent:"space-around", padding:"6px 0", zIndex:200, boxShadow:"0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
       {items.map(item => {
         const on = active === item.id;
         return (
-          <button key={item.id} onClick={()=>setActive(item.id)} style={{ background:"none", border:"none", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:5, padding:"4px 16px" }}>
-            <span style={{ filter:on?`drop-shadow(0 0 6px ${COLORS.accent})`:"none", transition:"filter 0.2s", position:"relative" }}>
+          <button key={item.id} onClick={()=>setActive(item.id)} style={{ background:"none", border:"none", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:3, padding:"3px 16px" }}>
+            <span style={{ filter:on?`drop-shadow(0 0 6px ${COLORS.accent})`:"none", transition:"filter 0.2s" }}>
               {item.id==="home" && <HomeIcon active={on}/>}
               {item.id==="store" && <StoreIcon active={on}/>}
               {item.id==="nexus" && <NexusIcon active={on}/>}
             </span>
-            <span style={{ fontSize:10, fontFamily:F, letterSpacing:"0.05em", fontWeight:on?700:400, color:on?COLORS.accent:COLORS.textMuted }}>{item.label}</span>
-            {on && <div style={{ width:4, height:4, borderRadius:"50%", background:COLORS.accent }}/>}
+            <span style={{ fontSize:9, fontFamily:F, letterSpacing:"0.05em", fontWeight:on?700:400, color:on?COLORS.accent:COLORS.textMuted }}>{item.label}</span>
+            {on && <div style={{ width:3, height:3, borderRadius:"50%", background:COLORS.accent }}/>}
           </button>
         );
       })}
@@ -646,21 +646,24 @@ function HomeScreen({ setScreen, onLogoTap, onAddToCart, onBuyNow, cart, onCartC
   const [detailCard, setDetailCard] = useState(null);
   if (detailCard) return <CardDetailScreen card={detailCard} onBack={()=>setDetailCard(null)} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} tasa={tasa}/>;
   return (
-    <div style={{ padding:"24px 20px", paddingBottom:100, width:"100%", boxSizing:"border-box" }}>
-      <div style={{ marginBottom:32 }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-          <img src={logo} onClick={onLogoTap} style={{ height:60, width:"auto", objectFit:"contain", marginLeft:-8, cursor:"pointer" }}/>
-          <div style={{ width:38, height:38, borderRadius:10, background:COLORS.card, border:`1px solid ${COLORS.border}`, display:"flex", alignItems:"center", justifyContent:"center" }}>
-            <span style={{ display:"inline-block", width:8, height:8, borderRadius:"50%", background:COLORS.accent, boxShadow:`0 0 8px ${COLORS.accent}` }}/>
-          </div>
+    <div style={{ padding:"16px 20px", paddingBottom:90, width:"100%", boxSizing:"border-box" }}>
+      {/* Header compacto */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+        <img src={logo} onClick={onLogoTap} style={{ height:44, width:"auto", objectFit:"contain", marginLeft:-8, cursor:"pointer" }}/>
+        <div style={{ width:32, height:32, borderRadius:9, background:COLORS.card, border:`1px solid ${COLORS.border}`, display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <span style={{ display:"inline-block", width:7, height:7, borderRadius:"50%", background:COLORS.accent, boxShadow:`0 0 8px ${COLORS.accent}` }}/>
         </div>
       </div>
-      {banner.visible !== false && <div style={{ background:`linear-gradient(135deg,${COLORS.card} 0%,rgba(26,26,48,0.8) 100%)`, borderRadius:20, padding:"24px 20px", marginBottom:24, border:`1px solid ${COLORS.border}`, position:"relative", overflow:"hidden" }}>
-        <div style={{ position:"absolute", top:-20, right:-20, width:120, height:120, borderRadius:"50%", background:"rgba(180,180,255,0.08)", filter:"blur(30px)" }}/>
-        <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, margin:"0 0 6px" }}><GlowDot/>{banner.badge||"NEXUS IA DISPONIBLE"}</p>
-        <h2 style={{ color:COLORS.text, fontSize:20, fontWeight:800, margin:"0 0 8px", lineHeight:1.2, fontFamily:F }}>{banner.title}</h2>
-        <p style={{ color:COLORS.textMuted, fontSize:13, margin:"0 0 16px", fontFamily:F }}>{banner.subtitle}</p>
-        <button onClick={()=>setScreen("nexus")} style={{ background:"rgba(255,255,255,0.15)", color:COLORS.text, border:"1px solid rgba(255,255,255,0.25)", borderRadius:10, padding:"10px 20px", fontSize:13, fontWeight:800, fontFamily:F, cursor:"pointer", letterSpacing:"0.05em", backdropFilter:"blur(10px)" }}>{banner.btn}</button>
+
+      {/* Banner compacto */}
+      {banner.visible !== false && <div style={{ background:`linear-gradient(135deg,${COLORS.card} 0%,rgba(26,26,48,0.8) 100%)`, borderRadius:16, padding:"14px 16px", marginBottom:18, border:`1px solid ${COLORS.border}`, position:"relative", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
+        <div style={{ position:"absolute", top:-20, right:-20, width:100, height:100, borderRadius:"50%", background:"rgba(180,180,255,0.08)", filter:"blur(30px)" }}/>
+        <div style={{ flex:1, minWidth:0 }}>
+          <p style={{ color:COLORS.textMuted, fontSize:10, fontFamily:F, margin:"0 0 3px" }}><GlowDot/>{banner.badge||"NEXUS IA DISPONIBLE"}</p>
+          <h2 style={{ color:COLORS.text, fontSize:15, fontWeight:800, margin:"0 0 2px", lineHeight:1.2, fontFamily:F, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{banner.title}</h2>
+          <p style={{ color:COLORS.textMuted, fontSize:11, margin:0, fontFamily:F, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{banner.subtitle}</p>
+        </div>
+        <button onClick={()=>setScreen("nexus")} style={{ flexShrink:0, background:"rgba(255,255,255,0.15)", color:COLORS.text, border:"1px solid rgba(255,255,255,0.25)", borderRadius:10, padding:"8px 14px", fontSize:11, fontWeight:800, fontFamily:F, cursor:"pointer", backdropFilter:"blur(10px)", whiteSpace:"nowrap" }}>{banner.btn}</button>
       </div>}
 
       <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, marginBottom:12, letterSpacing:"0.1em" }}>POPULARES EN LA TIENDA</p>
