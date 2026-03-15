@@ -608,32 +608,88 @@ function AutoScrollCards({ cards, onCardClick }) {
 function LoUltimo() {
   const posts = usePosts();
   const activos = posts.filter(p => p.activo !== false).slice(0, 3);
+  const [preview, setPreview] = useState(null); // post seleccionado
+  const [visible, setVisible] = useState(false); // controla animación
+
+  const openPreview = (post) => {
+    setPreview(post);
+    requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)));
+  };
+  const closePreview = () => {
+    setVisible(false);
+    setTimeout(() => setPreview(null), 280);
+  };
+
   if (!activos.length) return null;
   return (
     <div style={{ marginTop:28 }}>
       {/* Header */}
       <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:10 }}>
-        <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, margin:0, letterSpacing:"0.1em" }}>LO ÚLTIMO</p>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <rect x="2" y="2" width="20" height="20" rx="5" stroke="#E1306C" strokeWidth="2"/>
-          <circle cx="12" cy="12" r="4" stroke="#E1306C" strokeWidth="2"/>
-          <circle cx="17.5" cy="6.5" r="1.2" fill="#E1306C"/>
+        {/* Logo Instagram */}
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+          <defs>
+            <linearGradient id="ig" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#f09433"/>
+              <stop offset="25%" stopColor="#e6683c"/>
+              <stop offset="50%" stopColor="#dc2743"/>
+              <stop offset="75%" stopColor="#cc2366"/>
+              <stop offset="100%" stopColor="#bc1888"/>
+            </linearGradient>
+          </defs>
+          <rect x="2" y="2" width="20" height="20" rx="5" stroke="url(#ig)" strokeWidth="2"/>
+          <circle cx="12" cy="12" r="4" stroke="url(#ig)" strokeWidth="2"/>
+          <circle cx="17.5" cy="6.5" r="1.2" fill="url(#ig)"/>
         </svg>
+        <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, margin:0, letterSpacing:"0.1em" }}>ÚLTIMAS PUBLICACIONES</p>
       </div>
-      {/* Contenedor oscuro con las 3 imágenes */}
+
+      {/* Contenedor con imágenes */}
       <div style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:20, padding:10, display:"flex", gap:8 }}>
         {activos.map(post => (
-          <div key={post.id}
-            onClick={()=> post.link && window.open(post.link,"_blank")}
-            style={{ flex:1, borderRadius:15, overflow:"hidden", cursor:post.link?"pointer":"default", background:"#0d0d1a" }}>
-            <img
-              src={post.img_url}
-              alt={post.titulo||""}
-              style={{ width:"100%", height:"auto", display:"block" }}
-            />
+          <div key={post.id} onClick={()=>openPreview(post)}
+            style={{ flex:1, borderRadius:15, overflow:"hidden", cursor:"pointer", background:"#0d0d1a" }}>
+            <img src={post.img_url} alt={post.titulo||""} style={{ width:"100%", height:"auto", display:"block" }}/>
           </div>
         ))}
       </div>
+
+      {/* Modal preview estilo Instagram */}
+      {preview && (
+        <div
+          onClick={closePreview}
+          style={{ position:"fixed", inset:0, zIndex:999, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+            background: visible ? "rgba(0,0,0,0.88)" : "rgba(0,0,0,0)",
+            transition:"background 0.28s ease",
+          }}>
+          <div
+            onClick={e=>e.stopPropagation()}
+            style={{ width:"92vw", maxWidth:420, borderRadius:18, overflow:"hidden", background:"#1a1a2e", border:"1px solid rgba(255,255,255,0.1)",
+              transform: visible ? "scale(1) translateY(0)" : "scale(0.88) translateY(40px)",
+              opacity: visible ? 1 : 0,
+              transition:"transform 0.28s cubic-bezier(0.34,1.56,0.64,1), opacity 0.28s ease",
+            }}>
+            {/* Header del modal */}
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 16px" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                <div style={{ width:32, height:32, borderRadius:"50%", background:"linear-gradient(135deg,#f09433,#bc1888)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <rect x="2" y="2" width="20" height="20" rx="5" stroke="#fff" strokeWidth="2"/>
+                    <circle cx="12" cy="12" r="4" stroke="#fff" strokeWidth="2"/>
+                    <circle cx="17.5" cy="6.5" r="1.2" fill="#fff"/>
+                  </svg>
+                </div>
+                <div>
+                  <p style={{ color:"#fff", fontSize:13, fontWeight:700, fontFamily:F, margin:0 }}>startgame.app</p>
+                  {preview.titulo && <p style={{ color:"rgba(255,255,255,0.5)", fontSize:10, fontFamily:F, margin:0 }}>{preview.titulo}</p>}
+                </div>
+              </div>
+              <button onClick={closePreview} style={{ background:"none", border:"none", color:"rgba(255,255,255,0.6)", fontSize:22, cursor:"pointer", lineHeight:1, padding:0 }}>×</button>
+            </div>
+            {/* Imagen */}
+            <img src={preview.img_url} alt={preview.titulo||""} style={{ width:"100%", height:"auto", display:"block" }}/>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
