@@ -282,7 +282,7 @@ function useProducts() {
 
 // Global payment methods store
 const DEFAULT_METHODS = [
-  { id:"pagomovil", label:"Pago Móvil",  icon:"📱", color:"#00C896", info:[{label:"Teléfono",value:"0424-3663119"},{label:"Cédula",value:"28.236.056"},{label:"Banco",value:"Mercantil"}], fieldLabel:"Últimos 4 dígitos de la referencia", fieldPlaceholder:"Ej: 4821", maxLen:4 },
+  { id:"pagomovil", label:"Pago Móvil",  icon:"📱", color:"#00C896", info:[{label:"Teléfono",value:"0424-3663119"},{label:"Cédula",value:"28.236.056"},{label:"Banco",value:"Mercantil"}], fieldLabel:"Últimos 4 dígitos de la referencia", fieldPlaceholder:"Ej: 4821", maxLen:20 },
   { id:"binance",   label:"Binance Pay", icon:"🟡", color:"#F3BA2F", info:[{label:"Pay ID",value:"62569716"}], fieldLabel:"ID de la orden", fieldPlaceholder:"Ej: 123456789", maxLen:20 },
   { id:"zinli",     label:"Zinli",       icon:"💜", color:"#8B5CF6", info:[{label:"Correo",value:"Gil751630@gmail.com"}], fieldLabel:"Nombre del remitente", fieldPlaceholder:"Ej: Juan Pérez", maxLen:40 },
   { id:"paypal",    label:"PayPal",      icon:"🔷", color:"#003087", info:[{label:"Correo",value:""}], fieldLabel:"Nombre del remitente", fieldPlaceholder:"Ej: Juan Pérez", maxLen:40 },
@@ -1215,7 +1215,10 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
               </div>
             )}
             <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, fontWeight:600, letterSpacing:"0.08em", margin:"0 0 8px" }}>COMPROBANTE</p>
-            <input value={ref} onChange={e => setRef(e.target.value.slice(0, selected.maxLen))} placeholder={selected.fieldPlaceholder} style={{ width:"100%", boxSizing:"border-box", padding:"14px 16px", background:"rgba(255,255,255,0.07)", border:`1px solid ${ref.length > 0 ? selected.color+"88" : "rgba(255,255,255,0.18)"}`, borderRadius:12, color:COLORS.text, fontSize:14, fontFamily:F, outline:"none", transition:"border 0.2s" }}/>
+            <input value={ref} onChange={e => setRef(e.target.value.slice(0, selected.maxLen))} placeholder={selected.fieldPlaceholder}
+              inputMode={selected.id === "pagomovil" ? "numeric" : "text"}
+              type={selected.id === "pagomovil" ? "tel" : "text"}
+              style={{ width:"100%", boxSizing:"border-box", padding:"14px 16px", background:"rgba(255,255,255,0.07)", border:`1px solid ${ref.length > 0 ? selected.color+"88" : "rgba(255,255,255,0.18)"}`, borderRadius:12, color:COLORS.text, fontSize:14, fontFamily:F, outline:"none", transition:"border 0.2s" }}/>
             <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, margin:"6px 0 0" }}>{selected.fieldLabel}</p>
           </div>
         )}
