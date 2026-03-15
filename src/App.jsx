@@ -986,7 +986,11 @@ function CartPanel({ cart, onClose, onRemove, onUpdateQty, onCheckout }) {
                   <p style={{ color:COLORS.text, fontWeight:800, fontSize:13, margin:0, fontFamily:F }}>
                     {(() => { const usdt = getUsdt(item, rawAmt); if (usdt) return fmtBs(null, tasa, parseFloat(usdt)*item.quantity); if (isNumAmt) return fmtBs(val*item.quantity, tasa); return "—"; })()}
                   </p>
-                  <button onClick={()=>onRemove(i)} style={{ background:"rgba(255,77,106,0.15)", border:"1px solid rgba(255,77,106,0.3)", borderRadius:6, color:COLORS.danger, cursor:"pointer", width:26, height:26, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12 }}>🗑</button>
+                  <button onClick={()=>onRemove(i)} style={{ background:"rgba(255,77,106,0.15)", border:"none", borderRadius:8, color:COLORS.danger, cursor:"pointer", width:26, height:26, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF4D6A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                    </svg>
+                  </button>
                 </div>
               </div>
             );
