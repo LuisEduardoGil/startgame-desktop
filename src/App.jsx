@@ -865,7 +865,7 @@ function HomeScreen({ setScreen, onLogoTap, onAddToCart, onBuyNow, cart, onCartC
       {/* Header */}
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
         <img src={logo} onClick={onLogoTap} style={{ height:60, width:"auto", objectFit:"contain", marginLeft:-8, cursor:"pointer" }}/>
-        <button onClick={()=>setNotifOpen(true)} style={{ position:"relative", width:38, height:38, borderRadius:11, background:COLORS.card, border:`1px solid ${COLORS.border}`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+        <button onClick={()=>setNotifOpen(true)} style={{ position:"relative", width:38, height:38, borderRadius:11, background:COLORS.card, border:`1px solid ${COLORS.border}`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", overflow:"visible" }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={unread > 0 ? "#7B6FFF" : COLORS.textMuted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
           </svg>
