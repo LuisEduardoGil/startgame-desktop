@@ -198,6 +198,7 @@ function usePosts() {
 }
 
 
+function fmtBs(usd, tasa, usdtOverride) {
   const base = usdtOverride != null ? usdtOverride : usd;
   const bs = base * tasa;
   return `Bs. ${bs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
