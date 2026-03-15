@@ -384,18 +384,18 @@ function ProfileIcon({ active, photo }) {
 function BottomNav({ active, setActive, cartCount, onCartClick }) {
   const items = [{ id:"home", label:"Inicio" }, { id:"store", label:"Tienda" }, { id:"nexus", label:"Nexus IA" }];
   return (
-    <div style={{ position:"fixed", bottom:10, left:"50%", transform:"translateX(-50%)", width:"calc(100% - 32px)", background:"rgba(20,20,30,0.80)", backdropFilter:"blur(32px) saturate(180%)", WebkitBackdropFilter:"blur(32px) saturate(180%)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:18, display:"flex", justifyContent:"space-around", padding:"6px 0", zIndex:200, boxShadow:"0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+    <div style={{ position:"fixed", bottom:16, left:"50%", transform:"translateX(-50%)", width:"calc(100% - 32px)", background:"rgba(20,20,30,0.75)", backdropFilter:"blur(32px) saturate(180%)", WebkitBackdropFilter:"blur(32px) saturate(180%)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:20, display:"flex", justifyContent:"space-around", padding:"10px 0", zIndex:200, boxShadow:"0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
       {items.map(item => {
         const on = active === item.id;
         return (
-          <button key={item.id} onClick={()=>setActive(item.id)} style={{ background:"none", border:"none", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:3, padding:"3px 16px" }}>
-            <span style={{ filter:on?`drop-shadow(0 0 6px ${COLORS.accent})`:"none", transition:"filter 0.2s" }}>
+          <button key={item.id} onClick={()=>setActive(item.id)} style={{ background:"none", border:"none", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:5, padding:"4px 16px" }}>
+            <span style={{ filter:on?`drop-shadow(0 0 6px ${COLORS.accent})`:"none", transition:"filter 0.2s", position:"relative" }}>
               {item.id==="home" && <HomeIcon active={on}/>}
               {item.id==="store" && <StoreIcon active={on}/>}
               {item.id==="nexus" && <NexusIcon active={on}/>}
             </span>
-            <span style={{ fontSize:9, fontFamily:F, letterSpacing:"0.05em", fontWeight:on?700:400, color:on?COLORS.accent:COLORS.textMuted }}>{item.label}</span>
-            {on && <div style={{ width:3, height:3, borderRadius:"50%", background:COLORS.accent }}/>}
+            <span style={{ fontSize:10, fontFamily:F, letterSpacing:"0.05em", fontWeight:on?700:400, color:on?COLORS.accent:COLORS.textMuted }}>{item.label}</span>
+            {on && <div style={{ width:4, height:4, borderRadius:"50%", background:COLORS.accent }}/>}
           </button>
         );
       })}
