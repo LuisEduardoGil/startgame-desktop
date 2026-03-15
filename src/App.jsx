@@ -2445,21 +2445,38 @@ function AdminPosts() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
 
+  const compressImage = (file) => new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX = 1200;
+      let { width, height } = img;
+      if (width > MAX) { height = Math.round(height * MAX / width); width = MAX; }
+      else if (height > MAX) { width = Math.round(width * MAX / height); height = MAX; }
+      const canvas = document.createElement("canvas");
+      canvas.width = width; canvas.height = height;
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(blob => resolve(blob), "image/jpeg", 0.75);
+    };
+    img.src = url;
+  });
+
   const uploadFile = async (file) => {
     setUploading(true);
     setUploadError("");
     try {
-      const ext = file.name.split(".").pop();
-      const fileName = `post_${Date.now()}.${ext}`;
+      const compressed = await compressImage(file);
+      const fileName = `post_${Date.now()}.jpg`;
       const r = await fetch(`${SUPABASE_URL}/storage/v1/object/posts/${fileName}`, {
         method: "POST",
         headers: {
           "apikey": SUPABASE_KEY,
           "Authorization": `Bearer ${SUPABASE_KEY}`,
-          "Content-Type": file.type,
+          "Content-Type": "image/jpeg",
           "x-upsert": "true",
         },
-        body: file,
+        body: compressed,
       });
       if (!r.ok) { const e = await r.json(); throw new Error(e.message || "Error al subir"); }
       const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/posts/${fileName}`;
