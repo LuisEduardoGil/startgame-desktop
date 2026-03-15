@@ -1217,8 +1217,16 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
             status: "verified",
             manual_delivery: isManual
           });
-          if (result && result[0]?.id) onOrderCreated(result[0].id);
-          else setError("Error al crear el pedido. Contacta soporte con tu ID: " + txId);
+          // Acepta cualquier formato de respuesta válido de Supabase
+          const orderId = result?.[0]?.id || result?.id || null;
+          if (orderId) {
+            onOrderCreated(orderId);
+          } else {
+            // El pago fue exitoso — buscar la orden por txId como fallback
+            const rows = await fetch(`${SUPABASE_URL}/rest/v1/orders?customer_ref=eq.${txId}&select=id`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } }).then(r=>r.json());
+            if (rows?.[0]?.id) onOrderCreated(rows[0].id);
+            else setError("Pago recibido ✓ pero hubo un error al registrar. Guarda tu ID de transacción: " + txId);
+          }
         } catch(e) { setError("Error al procesar: " + e.message); }
         setLoading(false);
       },
