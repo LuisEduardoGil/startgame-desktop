@@ -103,7 +103,7 @@ serve(async (req) => {
       </table>
 
       <p style="font-size:12px;color:#999;margin:0;font-family:Arial,sans-serif;line-height:1.6;">
-        ¿Tienes algún problema con tu pedido? Contáctanos por WhatsApp y te ayudaremos.
+        ¿Tienes algún problema con tu pedido? <a href="https://wa.me/584243663119?text=Hola%2C%20necesito%20ayuda%20con%20mi%20pedido" style="color:#25D366;text-decoration:none;font-weight:700;">Contáctanos por WhatsApp</a> y te ayudaremos.
       </p>
     </div>
 
