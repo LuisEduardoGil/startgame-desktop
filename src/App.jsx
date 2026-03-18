@@ -210,6 +210,18 @@ function useNotifs() {
   return notifs;
 }
 
+// ── Desktop detection ──
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(() => window.innerWidth >= 900);
+  useEffect(() => {
+    const fn = () => setIsDesktop(window.innerWidth >= 900);
+    window.addEventListener("resize", fn);
+    return () => window.removeEventListener("resize", fn);
+  }, []);
+  return isDesktop;
+}
+
+
 function fmtBs(usd, tasa, usdtOverride) {
   const base = usdtOverride != null ? usdtOverride : usd;
   const bs = base * tasa;
@@ -853,6 +865,163 @@ function LoUltimo() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ─── DESKTOP LAYOUT ─── */
+
+function DesktopNav({ screen, setScreen, onLogoTap, cartCount, onCartClick }) {
+  const notifs = useNotifs();
+  const [notifOpen, setNotifOpen] = useState(false);
+  const leidas = (() => { try { return JSON.parse(localStorage.getItem("sg_notifs_leidas") || "[]"); } catch { return []; } })();
+  const unread = notifs.filter(n => n.activa !== false && !leidas.includes(n.id)).length;
+
+  const navItems = [{ id:"home", label:"Inicio" }, { id:"store", label:"Tienda" }, { id:"nexus", label:"Nexus IA" }];
+  return (
+    <>
+      <div style={{ position:"fixed", top:0, left:0, right:0, zIndex:300, background:"rgba(8,8,14,0.85)", backdropFilter:"blur(24px)", borderBottom:"1px solid rgba(255,255,255,0.08)", height:64 }}>
+        <div style={{ maxWidth:1100, margin:"0 auto", padding:"0 32px", height:"100%", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          {/* Logo */}
+          <img src={logo} onClick={onLogoTap} style={{ height:44, width:"auto", objectFit:"contain", cursor:"pointer" }}/>
+          {/* Nav links */}
+          <div style={{ display:"flex", gap:4 }}>
+            {navItems.map(item => {
+              const on = screen === item.id;
+              return (
+                <button key={item.id} onClick={()=>setScreen(item.id)}
+                  style={{ background: on ? "rgba(123,111,255,0.15)" : "none", border: on ? "1px solid rgba(123,111,255,0.3)" : "1px solid transparent", borderRadius:10, color: on ? "#7B6FFF" : "#F0EDE8", fontSize:14, fontWeight: on ? 700 : 400, fontFamily:F, cursor:"pointer", padding:"8px 20px", transition:"all 0.15s" }}>
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+          {/* Right side */}
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            {/* Cart */}
+            <button onClick={onCartClick} style={{ position:"relative", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:COLORS.text, cursor:"pointer", width:40, height:40, display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F0EDE8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+              </svg>
+              {cartCount > 0 && <span style={{ position:"absolute", top:-4, right:-4, background:"#7B6FFF", borderRadius:"50%", minWidth:16, height:16, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:800, color:"#fff" }}>{cartCount}</span>}
+            </button>
+            {/* Notif bell */}
+            <div onClick={()=>setNotifOpen(true)} style={{ position:"relative", width:40, height:40, borderRadius:10, background:"rgba(255,255,255,0.06)", border:`1px solid rgba(255,255,255,0.12)`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2a6 6 0 0 0-6 6c0 6-3 8-3 8h18s-3-2-3-8a6 6 0 0 0-6-6z" fill="none" stroke={unread > 0 ? "#7B6FFF" : "#F0EDE8"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" fill="none" stroke={unread > 0 ? "#7B6FFF" : "#F0EDE8"} strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+              {unread > 0 && <span style={{ position:"absolute", top:-4, right:-4, background:"#FF4D6A", borderRadius:"50%", minWidth:16, height:16, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:800, color:"#fff", padding:"0 3px" }}>{unread}</span>}
+            </div>
+          </div>
+        </div>
+      </div>
+      {notifOpen && <NotifPanel onClose={()=>setNotifOpen(false)}/>}
+    </>
+  );
+}
+
+function DesktopHome({ setScreen, onLogoTap, onAddToCart, onBuyNow, cart, onCartClick }) {
+  const tasa = useTasa();
+  const products = useProducts();
+  const banner = useBanner();
+  const active = products.filter(p => p.active !== false);
+  const [detailCard, setDetailCard] = useState(null);
+  if (detailCard) return <CardDetailScreen card={detailCard} onBack={()=>setDetailCard(null)} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} tasa={tasa}/>;
+  return (
+    <div style={{ maxWidth:1100, margin:"0 auto", padding:"90px 32px 60px", boxSizing:"border-box" }}>
+      {/* Banner */}
+      {banner.visible !== false && (
+        <div style={{ background:`linear-gradient(135deg,rgba(123,111,255,0.12) 0%,rgba(26,26,48,0.8) 100%)`, borderRadius:20, padding:"32px 40px", marginBottom:40, border:"1px solid rgba(123,111,255,0.2)", position:"relative", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"space-between", gap:32 }}>
+          <div style={{ position:"absolute", top:-40, right:-40, width:200, height:200, borderRadius:"50%", background:"rgba(123,111,255,0.08)", filter:"blur(60px)" }}/>
+          <div>
+            <p style={{ color:"#7B6FFF", fontSize:11, fontFamily:F, margin:"0 0 8px", letterSpacing:"0.15em", fontWeight:700 }}><GlowDot/>{banner.badge||"NEXUS IA DISPONIBLE"}</p>
+            <h2 style={{ color:COLORS.text, fontSize:28, fontWeight:900, margin:"0 0 8px", lineHeight:1.2, fontFamily:F }}>{banner.title}</h2>
+            <p style={{ color:COLORS.textMuted, fontSize:15, margin:0, fontFamily:F }}>{banner.subtitle}</p>
+          </div>
+          <button onClick={()=>setScreen("nexus")} style={{ flexShrink:0, background:"rgba(123,111,255,0.2)", color:"#A89FFF", border:"1px solid rgba(123,111,255,0.4)", borderRadius:12, padding:"12px 28px", fontSize:14, fontWeight:800, fontFamily:F, cursor:"pointer", whiteSpace:"nowrap" }}>{banner.btn}</button>
+        </div>
+      )}
+
+      {/* Populares */}
+      <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, marginBottom:16, letterSpacing:"0.1em" }}>POPULARES EN LA TIENDA</p>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(6, 1fr)", gap:12, marginBottom:40 }}>
+        {active.filter(p=>p.featured).slice(0,6).map(card => (
+          <div key={card.id} onClick={()=>setDetailCard(card)} style={{ background:COLORS.card, borderRadius:14, border:`1px solid ${COLORS.border}`, cursor:"pointer", overflow:"hidden", transition:"transform 0.15s", padding:4 }}
+            onMouseEnter={e=>e.currentTarget.style.transform="translateY(-3px)"}
+            onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
+            <img src={getImg(card)} style={{ width:"100%", height:80, objectFit:"cover", borderRadius:10, display:"block" }}/>
+            <p style={{ color:COLORS.text, fontSize:11, fontWeight:700, margin:"8px 6px 6px", fontFamily:F, textAlign:"center" }}>{card.name}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Últimas publicaciones */}
+      <LoUltimo/>
+    </div>
+  );
+}
+
+function DesktopStore({ onAddToCart, onBuyNow, cart, onCartClick }) {
+  const [filter, setFilter] = useState("Todos");
+  const [search, setSearch] = useState("");
+  const [detailCard, setDetailCard] = useState(null);
+  const tasa = useTasa();
+  const products = useProducts();
+  const filters = ["Todos","Consola","PC","Mobile"];
+  const active = products.filter(p => p.active !== false);
+  if (detailCard) return <CardDetailScreen card={detailCard} onBack={()=>setDetailCard(null)} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} tasa={tasa}/>;
+  const filtered = active.filter(c => {
+    const cats = Array.isArray(c.category) ? c.category : [c.category].filter(Boolean);
+    const matchCat = filter==="Todos" || cats.includes(filter);
+    const matchSearch = !search || c.name.toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchSearch;
+  }).sort((a,b) => { if(a.low_priority&&!b.low_priority) return 1; if(!a.low_priority&&b.low_priority) return -1; return 0; });
+
+  return (
+    <div style={{ maxWidth:1100, margin:"0 auto", padding:"90px 32px 60px", boxSizing:"border-box", display:"flex", gap:28 }}>
+      {/* Sidebar filtros */}
+      <div style={{ width:200, flexShrink:0 }}>
+        <h2 style={{ color:COLORS.text, fontSize:20, fontWeight:900, margin:"0 0 20px", fontFamily:F }}>Tienda</h2>
+        <p style={{ color:COLORS.textMuted, fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 10px" }}>CATEGORÍA</p>
+        <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+          {filters.map(f => (
+            <button key={f} onClick={()=>setFilter(f)} style={{ background:filter===f?"rgba(123,111,255,0.15)":"none", border:`1px solid ${filter===f?"rgba(123,111,255,0.3)":"transparent"}`, borderRadius:10, color:filter===f?"#7B6FFF":"#F0EDE8", fontSize:13, fontWeight:filter===f?700:400, fontFamily:F, cursor:"pointer", padding:"9px 14px", textAlign:"left", transition:"all 0.15s" }}>{f}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Contenido */}
+      <div style={{ flex:1 }}>
+        {/* Buscador */}
+        <div style={{ background:"rgba(255,255,255,0.05)", borderRadius:14, border:"1px solid rgba(255,255,255,0.10)", padding:"12px 16px", display:"flex", alignItems:"center", gap:12, marginBottom:24 }}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0 }}>
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar en la tienda..." style={{ background:"none", border:"none", outline:"none", color:COLORS.text, fontSize:14, fontFamily:F, flex:1 }}/>
+          {search && <button onClick={()=>setSearch("")} style={{ background:"rgba(255,255,255,0.08)", border:"none", borderRadius:6, color:COLORS.textMuted, cursor:"pointer", width:22, height:22, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12 }}>✕</button>}
+        </div>
+        {/* Grid 4 columnas */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:14 }}>
+          {filtered.map(card => (
+            <div key={card.id} onClick={()=>setDetailCard(card)} style={{ background:COLORS.card, borderRadius:16, border:`1px solid ${COLORS.border}`, cursor:"pointer", overflow:"hidden", padding:4, transition:"transform 0.15s" }}
+              onMouseEnter={e=>e.currentTarget.style.transform="translateY(-3px)"}
+              onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
+              <div style={{ position:"relative" }}>
+                <img src={getImg(card)} style={{ width:"100%", height:100, objectFit:"cover", display:"block", borderRadius:12 }}/>
+                {card.tag && <span style={{ position:"absolute", top:8, right:8, background:card.tag==="Oferta"?COLORS.danger:"rgba(0,0,0,0.55)", backdropFilter:"blur(8px)", color:"#fff", fontSize:9, fontFamily:F, fontWeight:700, padding:"2px 7px", borderRadius:4 }}>{card.tag}</span>}
+              </div>
+              <div style={{ padding:"12px 14px" }}>
+                <p style={{ color:COLORS.text, fontWeight:700, fontSize:13, margin:"0 0 2px", fontFamily:F }}>{card.name}</p>
+                <p style={{ color:COLORS.textSub, fontSize:10, margin:"0 0 10px", fontFamily:F }}>
+                  {(() => { const a=(card.amounts||[])[0]; const u=getUsdt(card,a); const num=parseFloat(String(a)); if(u) return `Desde ${fmtBs(null,tasa,parseFloat(u))}`; if(!isNaN(num)) return `Desde ${fmtBs(num,tasa)}`; return `Desde ${a||""}`; })()}
+                </p>
+                <button style={{ width:"100%", background:"rgba(255,255,255,0.10)", color:COLORS.text, border:"1px solid rgba(255,255,255,0.20)", borderRadius:8, padding:"8px", fontSize:11, fontFamily:F, fontWeight:700, cursor:"pointer" }}>VER MONTOS →</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -3158,6 +3327,37 @@ export default function App() {
       </div>
     );
   }
+
+  const isDesktop = useIsDesktop();
+
+  // ── DESKTOP LAYOUT ──
+  if (isDesktop && !adminMode && !orderId && !checkoutOpen) {
+    return (
+      <div style={{ background:COLORS.bg, minHeight:"100vh", fontFamily:F, color:COLORS.text }}>
+        <style>{`
+          html { background: ${COLORS.bg}; }
+          body { margin: 0; }
+        `}</style>
+        {/* Glows */}
+        <div style={{ position:"fixed", inset:0, zIndex:0, pointerEvents:"none", overflow:"hidden" }}>
+          <div style={{ position:"absolute", top:-100, left:"10%", width:500, height:500, borderRadius:"50%", background:"rgba(120,80,255,0.06)", filter:"blur(120px)" }}/>
+          <div style={{ position:"absolute", bottom:0, right:"10%", width:400, height:400, borderRadius:"50%", background:"rgba(60,140,255,0.05)", filter:"blur(100px)" }}/>
+        </div>
+        <div style={{ position:"relative", zIndex:1 }}>
+          <DesktopNav screen={screen} setScreen={setScreen} onLogoTap={tapLogo} cartCount={cartCount} onCartClick={()=>setCartOpen(true)}/>
+          {screen==="home"  && <DesktopHome setScreen={setScreen} onLogoTap={tapLogo} onAddToCart={addToCart} onBuyNow={()=>setCheckoutOpen(true)} cart={cart} onCartClick={()=>setCartOpen(true)}/>}
+          {screen==="store" && <DesktopStore onAddToCart={addToCart} onBuyNow={()=>setCheckoutOpen(true)} cart={cart} onCartClick={()=>setCartOpen(true)}/>}
+          {screen==="nexus" && (
+            <div style={{ paddingTop:64, height:"100vh" }}>
+              <NexusScreen/>
+            </div>
+          )}
+        </div>
+        {cartOpen && <CartPanel cart={cart} onClose={()=>setCartOpen(false)} onRemove={removeFromCart} onUpdateQty={updateQty} onCheckout={()=>{ setCartOpen(false); setCheckoutOpen(true); }}/>}
+      </div>
+    );
+  }
+
 
   // Order status screen
   if (orderId) {
