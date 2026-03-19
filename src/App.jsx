@@ -949,7 +949,7 @@ function DesktopHome({ setScreen, onLogoTap, onAddToCart, onBuyNow, cart, onCart
 
       {/* Populares */}
       <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, marginBottom:16, letterSpacing:"0.1em" }}>POPULARES EN LA TIENDA</p>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(6, 1fr)", gap:12, marginBottom:40 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(5, 1fr)", gap:12, marginBottom:40 }}>
         {active.filter(p=>p.featured).slice(0,6).map(card => (
           <div key={card.id} onClick={()=>setDetailCard(card)} style={{ background:COLORS.card, borderRadius:14, border:`1px solid ${COLORS.border}`, cursor:"pointer", overflow:"hidden", transition:"transform 0.15s", padding:4 }}
             onMouseEnter={e=>e.currentTarget.style.transform="translateY(-3px)"}
@@ -1000,7 +1000,7 @@ function DesktopStore({ onAddToCart, onBuyNow, cart, onCartClick }) {
       </div>
 
       {/* Contenido */}
-      <div style={{ flex:1 }}>
+      <div style={{ flex:1, minWidth:0 }}>
         {/* Buscador */}
         <div style={{ background:"rgba(255,255,255,0.05)", borderRadius:14, border:"1px solid rgba(255,255,255,0.10)", padding:"12px 16px", display:"flex", alignItems:"center", gap:12, marginBottom:24 }}>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0 }}>
@@ -1009,8 +1009,8 @@ function DesktopStore({ onAddToCart, onBuyNow, cart, onCartClick }) {
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar en la tienda..." style={{ background:"none", border:"none", outline:"none", color:COLORS.text, fontSize:14, fontFamily:F, flex:1 }}/>
           {search && <button onClick={()=>setSearch("")} style={{ background:"rgba(255,255,255,0.08)", border:"none", borderRadius:6, color:COLORS.textMuted, cursor:"pointer", width:22, height:22, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12 }}>✕</button>}
         </div>
-        {/* Grid 4 columnas */}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(200px, 1fr))", gap:14 }}>
+        {/* Grid columnas */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:14 }}>
           {filtered.map(card => (
             <div key={card.id} onClick={()=>setDetailCard(card)} style={{ background:COLORS.card, borderRadius:16, border:`1px solid ${COLORS.border}`, cursor:"pointer", overflow:"hidden", padding:4, transition:"transform 0.15s" }}
               onMouseEnter={e=>e.currentTarget.style.transform="translateY(-3px)"}
