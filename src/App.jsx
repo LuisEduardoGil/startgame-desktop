@@ -883,7 +883,7 @@ function DesktopNav({ screen, setScreen, onLogoTap, cartCount, onCartClick }) {
       <div style={{ position:"fixed", top:0, left:0, right:0, zIndex:300, background:"rgba(8,8,14,0.85)", backdropFilter:"blur(24px)", borderBottom:"1px solid rgba(255,255,255,0.08)", height:64 }}>
         <div style={{ width:"100%", maxWidth:1100, margin:"0 auto", padding:"0 32px", height:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", boxSizing:"border-box" }}>
           {/* Logo */}
-          <img src={logo} onClick={onLogoTap} style={{ height:40, width:40, objectFit:"contain", cursor:"pointer" }}/>
+          <img src={logo} onClick={onLogoTap} style={{ height:60, width:60, objectFit:"contain", cursor:"pointer" }}/>
           {/* Nav links */}
           <div style={{ display:"flex", gap:4 }}>
             {navItems.map(item => {
@@ -924,11 +924,14 @@ function DesktopHome({ setScreen, onLogoTap, onAddToCart, onBuyNow, cart, onCart
   const banner = useBanner();
   const active = products.filter(p => p.active !== false);
   const [detailCard, setDetailCard] = useState(null);
-  if (detailCard) return (
-    <div style={{ width:"100%", maxWidth:600, margin:"0 auto", padding:"80px 32px 60px", boxSizing:"border-box" }}>
-      <CardDetailScreen card={detailCard} onBack={()=>setDetailCard(null)} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} tasa={tasa}/>
-    </div>
-  );
+  if (detailCard) {
+    window.scrollTo(0, 0);
+    return (
+      <div style={{ width:"100%", maxWidth:600, margin:"0 auto", padding:"80px 32px 60px", boxSizing:"border-box" }}>
+        <CardDetailScreen card={detailCard} onBack={()=>{ setDetailCard(null); window.scrollTo(0,0); }} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} tasa={tasa}/>
+      </div>
+    );
+  }
   return (
     <div style={{ width:"100%", maxWidth:1100, margin:"0 auto", padding:"90px 32px 60px", boxSizing:"border-box" }}>
       {/* Banner */}
@@ -946,15 +949,8 @@ function DesktopHome({ setScreen, onLogoTap, onAddToCart, onBuyNow, cart, onCart
 
       {/* Populares */}
       <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, marginBottom:16, letterSpacing:"0.1em" }}>POPULARES EN LA TIENDA</p>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(5, 1fr)", gap:12, marginBottom:40 }}>
-        {active.filter(p=>p.featured).slice(0,6).map(card => (
-          <div key={card.id} onClick={()=>setDetailCard(card)} style={{ background:COLORS.card, borderRadius:14, border:`1px solid ${COLORS.border}`, cursor:"pointer", overflow:"hidden", transition:"transform 0.15s", padding:4 }}
-            onMouseEnter={e=>e.currentTarget.style.transform="translateY(-3px)"}
-            onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
-            <img src={getImg(card)} style={{ width:"100%", height:"auto", objectFit:"contain", borderRadius:10, display:"block", background:"rgba(255,255,255,0.03)" }}/>
-            <p style={{ color:COLORS.text, fontSize:11, fontWeight:700, margin:"8px 6px 6px", fontFamily:F, textAlign:"center" }}>{card.name}</p>
-          </div>
-        ))}
+      <div style={{ marginBottom:40 }}>
+        <AutoScrollCards cards={active.filter(p=>p.featured).slice(0,6)} onCardClick={setDetailCard}/>
       </div>
 
       {/* Últimas publicaciones */}
@@ -973,11 +969,20 @@ function DesktopStore({ onAddToCart, onBuyNow, cart, onCartClick }) {
   const products = useProducts();
   const filters = ["Todos","Consola","PC","Mobile"];
   const active = products.filter(p => p.active !== false);
-  if (detailCard) return (
-    <div style={{ width:"100%", maxWidth:600, margin:"0 auto", padding:"80px 32px 60px", boxSizing:"border-box" }}>
-      <CardDetailScreen card={detailCard} onBack={()=>setDetailCard(null)} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} tasa={tasa}/>
-    </div>
-  );
+
+  useEffect(() => {
+    window.scrollTo({ top:0, behavior:"instant" });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [detailCard]);
+
+  if (detailCard) {
+    return (
+      <div style={{ width:"100%", maxWidth:600, margin:"0 auto", padding:"80px 32px 60px", boxSizing:"border-box" }}>
+        <CardDetailScreen card={detailCard} onBack={()=>{ setDetailCard(null); }} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} tasa={tasa}/>
+      </div>
+    );
+  }
   const filtered = active.filter(c => {
     const cats = Array.isArray(c.category) ? c.category : [c.category].filter(Boolean);
     const matchCat = filter==="Todos" || cats.includes(filter);
@@ -3324,12 +3329,12 @@ export default function App() {
   // Admin mode overlay
   if (adminMode) {
     if (!adminAuth) return (
-      <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:COLORS.bg, overflowY:"auto", zIndex:1, fontFamily:F, color:COLORS.text }}>
+      <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:COLORS.bg, overflowY:"auto", zIndex:9999, fontFamily:F, color:COLORS.text }}>
         <AdminLogin onSuccess={()=>setAdminAuth(true)}/>
       </div>
     );
     return (
-      <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:COLORS.bg, overflowY:"auto", zIndex:1, fontFamily:F, color:COLORS.text }}>
+      <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:COLORS.bg, overflowY:"auto", zIndex:9999, fontFamily:F, color:COLORS.text }}>
         <AdminPanel onExit={()=>{ setAdminMode(false); setAdminAuth(false); }}/>
       </div>
     );
