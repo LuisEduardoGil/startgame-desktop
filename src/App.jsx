@@ -3341,17 +3341,16 @@ export default function App() {
   // ── DESKTOP LAYOUT ──
   if (isDesktop && !adminMode && !orderId && !checkoutOpen) {
     return (
-      <div style={{ background:COLORS.bg, minHeight:"100vh", fontFamily:F, color:COLORS.text }}>
+      <div style={{ background:COLORS.bg, minHeight:"100vh", width:"100vw", fontFamily:F, color:COLORS.text, overflowX:"hidden" }}>
         <style>{`
-          html { background: ${COLORS.bg}; }
-          body { margin: 0; }
+          html, body, #root { background: ${COLORS.bg}; margin: 0; padding: 0; width: 100%; overflow-x: hidden; }
         `}</style>
         {/* Glows */}
         <div style={{ position:"fixed", inset:0, zIndex:0, pointerEvents:"none", overflow:"hidden" }}>
           <div style={{ position:"absolute", top:-100, left:"10%", width:500, height:500, borderRadius:"50%", background:"rgba(120,80,255,0.06)", filter:"blur(120px)" }}/>
           <div style={{ position:"absolute", bottom:0, right:"10%", width:400, height:400, borderRadius:"50%", background:"rgba(60,140,255,0.05)", filter:"blur(100px)" }}/>
         </div>
-        <div style={{ position:"relative", zIndex:1 }}>
+        <div style={{ position:"relative", zIndex:1, width:"100%" }}>
           <DesktopNav screen={screen} setScreen={setScreen} onLogoTap={tapLogo} cartCount={cartCount} onCartClick={()=>setCartOpen(true)}/>
           {screen==="home"  && <DesktopHome setScreen={setScreen} onLogoTap={tapLogo} onAddToCart={addToCart} onBuyNow={()=>setCheckoutOpen(true)} cart={cart} onCartClick={()=>setCartOpen(true)}/>}
           {screen==="store" && <DesktopStore onAddToCart={addToCart} onBuyNow={()=>setCheckoutOpen(true)} cart={cart} onCartClick={()=>setCartOpen(true)}/>}
