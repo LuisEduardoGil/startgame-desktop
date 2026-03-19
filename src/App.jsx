@@ -3316,6 +3316,8 @@ export default function App() {
   const updateQty = (i, qty) => setCart(prev => prev.map((item, idx) => idx===i ? {...item, quantity:qty} : item));
   const cartCount = cart.reduce((s, i) => s + i.quantity, 0);
 
+  const isDesktop = useIsDesktop();
+
   // Loading screen
   if (!appReady) return (
     <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"#0a0a14", overflow:"hidden" }}>
@@ -3342,8 +3344,6 @@ export default function App() {
       </div>
     );
   }
-
-  const isDesktop = useIsDesktop();
 
   // ── DESKTOP LAYOUT ──
   if (isDesktop && !adminMode && !orderId && !checkoutOpen) {
