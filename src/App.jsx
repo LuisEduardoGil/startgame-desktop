@@ -883,7 +883,7 @@ function DesktopNav({ screen, setScreen, onLogoTap, cartCount, onCartClick }) {
       <div style={{ position:"fixed", top:0, left:0, right:0, zIndex:300, background:"rgba(8,8,14,0.85)", backdropFilter:"blur(24px)", borderBottom:"1px solid rgba(255,255,255,0.08)", height:64 }}>
         <div style={{ width:"100%", maxWidth:1100, margin:"0 auto", padding:"0 32px", height:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", boxSizing:"border-box" }}>
           {/* Logo */}
-          <img src={logo} onClick={onLogoTap} style={{ height:44, width:"auto", objectFit:"contain", cursor:"pointer" }}/>
+          <img src={logo} onClick={onLogoTap} style={{ height:40, width:40, objectFit:"contain", cursor:"pointer" }}/>
           {/* Nav links */}
           <div style={{ display:"flex", gap:4 }}>
             {navItems.map(item => {
@@ -900,10 +900,7 @@ function DesktopNav({ screen, setScreen, onLogoTap, cartCount, onCartClick }) {
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             {/* Cart */}
             <button onClick={onCartClick} style={{ position:"relative", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:COLORS.text, cursor:"pointer", width:40, height:40, display:"flex", alignItems:"center", justifyContent:"center" }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F0EDE8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-              </svg>
-              {cartCount > 0 && <span style={{ position:"absolute", top:-4, right:-4, background:"#7B6FFF", borderRadius:"50%", minWidth:16, height:16, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:800, color:"#fff" }}>{cartCount}</span>}
+              <CartIcon count={cartCount}/>
             </button>
             {/* Notif bell */}
             <div onClick={()=>setNotifOpen(true)} style={{ position:"relative", width:40, height:40, borderRadius:10, background:"rgba(255,255,255,0.06)", border:`1px solid rgba(255,255,255,0.12)`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
