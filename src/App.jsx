@@ -881,7 +881,7 @@ function DesktopNav({ screen, setScreen, onLogoTap, cartCount, onCartClick }) {
   return (
     <>
       <div style={{ position:"fixed", top:0, left:0, right:0, zIndex:300, background:"rgba(8,8,14,0.85)", backdropFilter:"blur(24px)", borderBottom:"1px solid rgba(255,255,255,0.08)", height:64 }}>
-        <div style={{ maxWidth:1100, margin:"0 auto", padding:"0 32px", height:"100%", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div style={{ width:"100%", maxWidth:1100, margin:"0 auto", padding:"0 32px", height:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", boxSizing:"border-box" }}>
           {/* Logo */}
           <img src={logo} onClick={onLogoTap} style={{ height:44, width:"auto", objectFit:"contain", cursor:"pointer" }}/>
           {/* Nav links */}
@@ -927,9 +927,13 @@ function DesktopHome({ setScreen, onLogoTap, onAddToCart, onBuyNow, cart, onCart
   const banner = useBanner();
   const active = products.filter(p => p.active !== false);
   const [detailCard, setDetailCard] = useState(null);
-  if (detailCard) return <CardDetailScreen card={detailCard} onBack={()=>setDetailCard(null)} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} tasa={tasa}/>;
+  if (detailCard) return (
+    <div style={{ width:"100%", maxWidth:600, margin:"0 auto", padding:"80px 32px 60px", boxSizing:"border-box" }}>
+      <CardDetailScreen card={detailCard} onBack={()=>setDetailCard(null)} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} tasa={tasa}/>
+    </div>
+  );
   return (
-    <div style={{ maxWidth:1100, margin:"0 auto", padding:"90px 32px 60px", boxSizing:"border-box" }}>
+    <div style={{ width:"100%", maxWidth:1100, margin:"0 auto", padding:"90px 32px 60px", boxSizing:"border-box" }}>
       {/* Banner */}
       {banner.visible !== false && (
         <div style={{ background:`linear-gradient(135deg,rgba(123,111,255,0.12) 0%,rgba(26,26,48,0.8) 100%)`, borderRadius:20, padding:"32px 40px", marginBottom:40, border:"1px solid rgba(123,111,255,0.2)", position:"relative", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"space-between", gap:32 }}>
@@ -970,7 +974,11 @@ function DesktopStore({ onAddToCart, onBuyNow, cart, onCartClick }) {
   const products = useProducts();
   const filters = ["Todos","Consola","PC","Mobile"];
   const active = products.filter(p => p.active !== false);
-  if (detailCard) return <CardDetailScreen card={detailCard} onBack={()=>setDetailCard(null)} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} tasa={tasa}/>;
+  if (detailCard) return (
+    <div style={{ width:"100%", maxWidth:600, margin:"0 auto", padding:"80px 32px 60px", boxSizing:"border-box" }}>
+      <CardDetailScreen card={detailCard} onBack={()=>setDetailCard(null)} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} tasa={tasa}/>
+    </div>
+  );
   const filtered = active.filter(c => {
     const cats = Array.isArray(c.category) ? c.category : [c.category].filter(Boolean);
     const matchCat = filter==="Todos" || cats.includes(filter);
@@ -979,7 +987,7 @@ function DesktopStore({ onAddToCart, onBuyNow, cart, onCartClick }) {
   }).sort((a,b) => { if(a.low_priority&&!b.low_priority) return 1; if(!a.low_priority&&b.low_priority) return -1; return 0; });
 
   return (
-    <div style={{ maxWidth:1100, margin:"0 auto", padding:"90px 32px 60px", boxSizing:"border-box", display:"flex", gap:28 }}>
+    <div style={{ width:"100%", maxWidth:1100, margin:"0 auto", padding:"90px 32px 60px", boxSizing:"border-box", display:"flex", gap:28 }}>
       {/* Sidebar filtros */}
       <div style={{ width:200, flexShrink:0 }}>
         <h2 style={{ color:COLORS.text, fontSize:20, fontWeight:900, margin:"0 0 20px", fontFamily:F }}>Tienda</h2>
@@ -1002,7 +1010,7 @@ function DesktopStore({ onAddToCart, onBuyNow, cart, onCartClick }) {
           {search && <button onClick={()=>setSearch("")} style={{ background:"rgba(255,255,255,0.08)", border:"none", borderRadius:6, color:COLORS.textMuted, cursor:"pointer", width:22, height:22, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12 }}>✕</button>}
         </div>
         {/* Grid 4 columnas */}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:14 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(200px, 1fr))", gap:14 }}>
           {filtered.map(card => (
             <div key={card.id} onClick={()=>setDetailCard(card)} style={{ background:COLORS.card, borderRadius:16, border:`1px solid ${COLORS.border}`, cursor:"pointer", overflow:"hidden", padding:4, transition:"transform 0.15s" }}
               onMouseEnter={e=>e.currentTarget.style.transform="translateY(-3px)"}
