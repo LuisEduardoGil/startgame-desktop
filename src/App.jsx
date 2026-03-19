@@ -536,7 +536,7 @@ function CardDetailScreen({ card, onBack, onAddToCart, onBuyNow, cart, onCartCli
   );
 }
 
-function AutoScrollCards({ cards, onCardClick }) {
+function AutoScrollCards({ cards, onCardClick, cardWidth=110, cardHeight=70 }) {
   const tasa = useTasa();
   const scrollRef = useRef(null);
   const animRef = useRef(null);
@@ -614,9 +614,9 @@ function AutoScrollCards({ cards, onCardClick }) {
       onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
       <div ref={scrollRef} style={{ display:"flex", gap:12, width:"max-content", willChange:"transform" }}>
         {items.map((card, idx) => (
-          <div key={idx} onClick={()=>onCardClick(card)}
-            style={{ minWidth:110, width:110, background:COLORS.card, borderRadius:14, border:`1px solid ${COLORS.border}`, flexShrink:0, overflow:"hidden", cursor:"pointer", marginLeft:idx===0?20:0, display:"flex", flexDirection:"column" }}>
-            <div style={{ width:"100%", height:70, flexShrink:0, overflow:"hidden" }}>
+          <div key={idx} onClick={()=>onCardClick(card)} className="sg-card-item"
+            style={{ minWidth:cardWidth, width:cardWidth, background:COLORS.card, borderRadius:14, border:`1px solid ${COLORS.border}`, flexShrink:0, overflow:"hidden", cursor:"pointer", marginLeft:idx===0?20:0, display:"flex", flexDirection:"column" }}>
+            <div style={{ width:"100%", height:cardHeight, flexShrink:0, overflow:"hidden" }}>
               <img src={getImg(card)} style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }}/>
             </div>
             <div style={{ padding:"6px 10px 10px 10px", display:"flex", flexDirection:"column", justifyContent:"flex-start" }}>
@@ -950,7 +950,10 @@ function DesktopHome({ setScreen, onLogoTap, onAddToCart, onBuyNow, cart, onCart
       {/* Populares */}
       <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, marginBottom:16, letterSpacing:"0.1em" }}>POPULARES EN LA TIENDA</p>
       <div style={{ marginBottom:40 }}>
-        <AutoScrollCards cards={active.filter(p=>p.featured).slice(0,6)} onCardClick={setDetailCard}/>
+        <style>{`.sg-desktop-cards .sg-card-item { min-width: 200px !important; width: 200px !important; } .sg-desktop-cards .sg-card-item img { height: 130px !important; }`}</style>
+        <div className="sg-desktop-cards">
+          <AutoScrollCards cards={active.filter(p=>p.featured).slice(0,6)} onCardClick={setDetailCard} cardWidth={200} cardHeight={130}/>
+        </div>
       </div>
 
       {/* Últimas publicaciones */}
