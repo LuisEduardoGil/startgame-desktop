@@ -954,14 +954,16 @@ function DesktopHome({ setScreen, onLogoTap, onAddToCart, onBuyNow, cart, onCart
           <div key={card.id} onClick={()=>setDetailCard(card)} style={{ background:COLORS.card, borderRadius:14, border:`1px solid ${COLORS.border}`, cursor:"pointer", overflow:"hidden", transition:"transform 0.15s", padding:4 }}
             onMouseEnter={e=>e.currentTarget.style.transform="translateY(-3px)"}
             onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
-            <img src={getImg(card)} style={{ width:"100%", height:80, objectFit:"cover", borderRadius:10, display:"block" }}/>
+            <img src={getImg(card)} style={{ width:"100%", height:"auto", objectFit:"contain", borderRadius:10, display:"block", background:"rgba(255,255,255,0.03)" }}/>
             <p style={{ color:COLORS.text, fontSize:11, fontWeight:700, margin:"8px 6px 6px", fontFamily:F, textAlign:"center" }}>{card.name}</p>
           </div>
         ))}
       </div>
 
       {/* Últimas publicaciones */}
-      <LoUltimo/>
+      <div style={{ maxWidth:"60%", margin:"0 auto" }}>
+        <LoUltimo/>
+      </div>
     </div>
   );
 }
@@ -1016,7 +1018,7 @@ function DesktopStore({ onAddToCart, onBuyNow, cart, onCartClick }) {
               onMouseEnter={e=>e.currentTarget.style.transform="translateY(-3px)"}
               onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
               <div style={{ position:"relative" }}>
-                <img src={getImg(card)} style={{ width:"100%", height:100, objectFit:"cover", display:"block", borderRadius:12 }}/>
+                <img src={getImg(card)} style={{ width:"100%", height:"auto", objectFit:"contain", display:"block", borderRadius:12, background:"rgba(255,255,255,0.03)" }}/>
                 {card.tag && <span style={{ position:"absolute", top:8, right:8, background:card.tag==="Oferta"?COLORS.danger:"rgba(0,0,0,0.55)", backdropFilter:"blur(8px)", color:"#fff", fontSize:9, fontFamily:F, fontWeight:700, padding:"2px 7px", borderRadius:4 }}>{card.tag}</span>}
               </div>
               <div style={{ padding:"12px 14px" }}>
