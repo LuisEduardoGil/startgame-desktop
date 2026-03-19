@@ -468,7 +468,7 @@ function CardDetailScreen({ card, onBack, onAddToCart, onBuyNow, cart, onCartCli
         </button>
       </div>
       <div style={{ margin:"0 20px 24px", borderRadius:20, overflow:"hidden", border:"1px solid rgba(255,255,255,0.10)", boxShadow:"0 8px 40px rgba(0,0,0,0.4)" }}>
-        <img src={getImg(card)} style={{ width:"100%", height:200, objectFit:"cover", display:"block" }}/>
+        <img src={getImg(card)} style={{ width:"100%", height:"auto", objectFit:"contain", display:"block", background:"rgba(255,255,255,0.03)" }}/>
       </div>
       <div style={{ padding:"0 20px" }}>
         <div style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.10)", borderRadius:20, padding:"20px", marginBottom:16 }}>
@@ -1278,8 +1278,8 @@ function CartPanel({ cart, onClose, onRemove, onUpdateQty, onCheckout }) {
   const useUsdt = cart.some(i => getUsdt(i, i.selectedAmount.replace("$","").trim()));
   return (
     <>
-      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.65)", zIndex:300, backdropFilter:"blur(4px)" }}/>
-      <div style={{ position:"fixed", bottom:0, left:0, width:"100%", background:"#12121E", border:"1px solid rgba(255,255,255,0.12)", borderRadius:"24px 24px 0 0", zIndex:301, padding:"0 0 32px", maxHeight:"82vh", overflowY:"auto" }}>
+      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.65)", zIndex:600, backdropFilter:"blur(4px)" }}/>
+      <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:560, background:"#12121E", border:"1px solid rgba(255,255,255,0.12)", borderRadius:"24px 24px 0 0", zIndex:601, padding:"0 0 32px", maxHeight:"82vh", overflowY:"auto" }}>
         <div style={{ display:"flex", justifyContent:"center", padding:"12px 0 4px" }}><div style={{ width:36, height:4, borderRadius:2, background:"rgba(255,255,255,0.2)" }}/></div>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 20px 16px" }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}><CartIcon count={0}/><h2 style={{ color:COLORS.text, fontSize:20, fontWeight:800, margin:0, fontFamily:F }}>Mi Carrito</h2></div>
