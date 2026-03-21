@@ -21,7 +21,7 @@ const SUPABASE_URL = "https://zacdqpvhnlgtbgurfqac.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphY2RxcHZobmxndGJndXJmcWFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1ODQzNjksImV4cCI6MjA4ODE2MDM2OX0.yFPCd6MfcT-wCRC1PELVu0YIyWxbozjHpsB63bo8zjs";
 
 // ─── RESEND CONFIG ───────────────────────────────────────────────
-const RESEND_API_KEY = "re_Duch2Gnq_BytxT55CVVjH7YP6p3HoYEMR";
+const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY || "re_Duch2Gnq_BytxT55CVVjH7YP6p3HoYEMR";
 const FROM_EMAIL     = "Start Game <noreply@startgame.app>";
 
 async function sendGiftEmail({ to_email, order_id, gift_code, items, payment_method, total, total_bs }) {
@@ -103,7 +103,7 @@ const sb = {
     return r.json();
   },
   async getAll(table) {
-    const order = table === "orders" ? "?order=created_at.desc" : table === "posts" ? "?order=orden.asc" : table === "notificaciones" ? "?order=orden.asc" : "?order=name.asc";
+    const order = table === "orders" ? "?order=created_at.desc" : table === "posts" ? "?order=orden.asc" : table === "notificaciones" ? "?order=orden.asc" : table === "game_ofertas" ? "?order=created_at.desc" : "?order=name.asc";
     const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}${order}&select=*`, {
       headers: HEADERS,
     });
@@ -210,18 +210,6 @@ function useNotifs() {
   return notifs;
 }
 
-// ── Desktop detection ──
-function useIsDesktop() {
-  const [isDesktop, setIsDesktop] = useState(() => window.innerWidth >= 900);
-  useEffect(() => {
-    const fn = () => setIsDesktop(window.innerWidth >= 900);
-    window.addEventListener("resize", fn);
-    return () => window.removeEventListener("resize", fn);
-  }, []);
-  return isDesktop;
-}
-
-
 function fmtBs(usd, tasa, usdtOverride) {
   const base = usdtOverride != null ? usdtOverride : usd;
   const bs = base * tasa;
@@ -306,6 +294,23 @@ function useProducts() {
   return products;
 }
 
+// Global games store
+let GLOBAL_GAMES = [];
+const gamesListeners = new Set();
+function setGlobalGames(g) {
+  const arr = Array.isArray(g) ? g : [];
+  GLOBAL_GAMES = arr;
+  gamesListeners.forEach(fn => fn(arr));
+}
+function useGames() {
+  const [games, setGames] = useState(() => Array.isArray(GLOBAL_GAMES) ? GLOBAL_GAMES : []);
+  useEffect(() => {
+    gamesListeners.add(setGames);
+    return () => gamesListeners.delete(setGames);
+  }, []);
+  return games;
+}
+
 // Global payment methods store
 const DEFAULT_METHODS = [
   { id:"pagomovil", label:"Pago Móvil",  icon:"📱", color:"#00C896", info:[{label:"Teléfono",value:"0424-3663119"},{label:"Cédula",value:"28.236.056"},{label:"Banco",value:"Mercantil"}], fieldLabel:"Últimos 4 dígitos de la referencia", fieldPlaceholder:"Ej: 4821", maxLen:20 },
@@ -387,7 +392,21 @@ function CartIcon({ count }) {
   );
 }
 
-/* ─── CART PANEL (slide-up modal) ─── */
+function BellIcon({ count }) {
+  return (
+    <span style={{ position:"relative", display:"inline-flex", alignItems:"center", justifyContent:"center" }}>
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={COLORS.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+      </svg>
+      {count > 0 && (
+        <span style={{ position:"absolute", top:-6, right:-6, background:"#FF4D6A", color:"#fff", fontSize:9, fontWeight:800, fontFamily:F, width:17, height:17, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", border:"2px solid #08080E" }}>{count}</span>
+      )}
+    </span>
+  );
+}
+
+
 
 function HomeIcon({ active }) {
   const c = active ? COLORS.accent : COLORS.textMuted;
@@ -406,8 +425,20 @@ function ProfileIcon({ active, photo }) {
   if (photo) return <div style={{ width:26, height:26, borderRadius:"50%", border:`2px solid ${c}`, overflow:"hidden" }}><img src={photo} style={{ width:"100%", height:"100%", objectFit:"cover" }}/></div>;
   return <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={active?2.2:1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
 }
+function GamesIcon({ active }) {
+  const c = active ? COLORS.accent : COLORS.textMuted;
+  const sw = active ? 2.2 : 1.8;
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2"  y="2"  width="9" height="9"  rx="2"/>
+      <rect x="14" y="2"  width="9" height="9"  rx="2"/>
+      <rect x="2"  y="14" width="9" height="9"  rx="2"/>
+      <rect x="14" y="14" width="9" height="9"  rx="2"/>
+    </svg>
+  );
+}
 function BottomNav({ active, setActive, cartCount, onCartClick }) {
-  const items = [{ id:"home", label:"Inicio" }, { id:"store", label:"Tienda" }, { id:"nexus", label:"Nexus IA" }];
+  const items = [{ id:"home", label:"Inicio" }, { id:"store", label:"Tienda" }, { id:"games", label:"Juegos" }, { id:"nexus", label:"Nexus IA" }];
   return (
     <div style={{ position:"fixed", bottom:16, left:"50%", transform:"translateX(-50%)", width:"calc(100% - 32px)", maxWidth:448, background:"rgba(20,20,30,0.75)", backdropFilter:"blur(32px) saturate(180%)", WebkitBackdropFilter:"blur(32px) saturate(180%)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:20, display:"flex", justifyContent:"space-around", padding:"10px 0", zIndex:200, boxShadow:"0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
       {items.map(item => {
@@ -417,6 +448,7 @@ function BottomNav({ active, setActive, cartCount, onCartClick }) {
             <span style={{ filter:on?`drop-shadow(0 0 6px ${COLORS.accent})`:"none", transition:"filter 0.2s", position:"relative" }}>
               {item.id==="home" && <HomeIcon active={on}/>}
               {item.id==="store" && <StoreIcon active={on}/>}
+              {item.id==="games" && <GamesIcon active={on}/>}
               {item.id==="nexus" && <NexusIcon active={on}/>}
             </span>
             <span style={{ fontSize:10, fontFamily:F, letterSpacing:"0.05em", fontWeight:on?700:400, color:on?COLORS.accent:COLORS.textMuted }}>{item.label}</span>
@@ -427,13 +459,28 @@ function BottomNav({ active, setActive, cartCount, onCartClick }) {
     </div>
   );
 }
+/* ── Imagen con fade-in al cargar ── */
+function FadeImg({ src, style, alt }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <img
+      src={src}
+      alt={alt||""}
+      onLoad={()=>setLoaded(true)}
+      style={{ ...style, opacity: loaded ? 1 : 0, transition:"opacity 0.35s ease" }}
+    />
+  );
+}
+
 function CardDetailScreen({ card, onBack, onAddToCart, onBuyNow, cart, onCartClick, tasa }) {
   const [selectedAmount, setSelectedAmount] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
+  const [visible, setVisible] = useState(false);
   useEffect(() => {
     const el = document.querySelector("[data-main-scroll]");
     if (el) el.scrollTop = 0;
+    requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)));
   }, []);
   const cartCount = cart.reduce((s, i) => s + i.quantity, 0);
   const t = tasa || GLOBAL_TASA;
@@ -456,7 +503,10 @@ function CardDetailScreen({ card, onBack, onAddToCart, onBuyNow, cart, onCartCli
     if (onBuyNow) onBuyNow();
   };
   return (
-    <div style={{ minHeight:"100vh", paddingBottom:120, background:COLORS.bg }}>
+    <div style={{ minHeight:"100vh", paddingBottom:120, background:COLORS.bg,
+      opacity: visible ? 1 : 0,
+      transform: visible ? "translateY(0)" : "translateY(24px)",
+      transition:"opacity 0.28s ease, transform 0.28s cubic-bezier(0.22,1,0.36,1)" }}>
       <div style={{ padding:"20px 20px 16px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <button onClick={onBack} style={{ background:"rgba(255,255,255,0.08)", backdropFilter:"blur(12px)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:12, color:COLORS.text, cursor:"pointer", width:40, height:40, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>←</button>
         <div style={{ textAlign:"center" }}>
@@ -468,7 +518,7 @@ function CardDetailScreen({ card, onBack, onAddToCart, onBuyNow, cart, onCartCli
         </button>
       </div>
       <div style={{ margin:"0 20px 24px", borderRadius:20, overflow:"hidden", border:"1px solid rgba(255,255,255,0.10)", boxShadow:"0 8px 40px rgba(0,0,0,0.4)" }}>
-        <img src={getImg(card)} style={{ width:"100%", height:"auto", objectFit:"contain", display:"block", background:"rgba(255,255,255,0.03)" }}/>
+        <img src={getImg(card)} style={{ width:"100%", height:200, objectFit:"cover", display:"block" }}/>
       </div>
       <div style={{ padding:"0 20px" }}>
         <div style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.10)", borderRadius:20, padding:"20px", marginBottom:16 }}>
@@ -536,7 +586,7 @@ function CardDetailScreen({ card, onBack, onAddToCart, onBuyNow, cart, onCartCli
   );
 }
 
-function AutoScrollCards({ cards, onCardClick, cardWidth=110, cardHeight=70 }) {
+function AutoScrollCards({ cards, onCardClick }) {
   const tasa = useTasa();
   const scrollRef = useRef(null);
   const animRef = useRef(null);
@@ -614,10 +664,10 @@ function AutoScrollCards({ cards, onCardClick, cardWidth=110, cardHeight=70 }) {
       onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
       <div ref={scrollRef} style={{ display:"flex", gap:12, width:"max-content", willChange:"transform" }}>
         {items.map((card, idx) => (
-          <div key={idx} onClick={()=>onCardClick(card)} className="sg-card-item"
-            style={{ minWidth:cardWidth, width:cardWidth, background:COLORS.card, borderRadius:14, border:`1px solid ${COLORS.border}`, flexShrink:0, overflow:"hidden", cursor:"pointer", marginLeft:idx===0?20:0, display:"flex", flexDirection:"column" }}>
-            <div style={{ width:"100%", height:cardHeight, flexShrink:0, overflow:"hidden" }}>
-              <img src={getImg(card)} style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }}/>
+          <div key={idx} onClick={()=>onCardClick(card)}
+            style={{ minWidth:110, width:110, background:COLORS.card, borderRadius:14, border:`1px solid ${COLORS.border}`, flexShrink:0, overflow:"hidden", cursor:"pointer", marginLeft:idx===0?20:0, display:"flex", flexDirection:"column" }}>
+            <div style={{ width:"100%", height:70, flexShrink:0, overflow:"hidden" }}>
+              <FadeImg src={getImg(card)} style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }}/>
             </div>
             <div style={{ padding:"6px 10px 10px 10px", display:"flex", flexDirection:"column", justifyContent:"flex-start" }}>
               <p style={{ color:COLORS.text, fontSize:11, fontWeight:700, margin:0, fontFamily:F, minHeight:28, maxHeight:28, display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden" }}>{card.name}</p>
@@ -869,178 +919,6 @@ function LoUltimo() {
   );
 }
 
-/* ─── DESKTOP LAYOUT ─── */
-
-function DesktopNav({ screen, setScreen, onLogoTap, cartCount, onCartClick }) {
-  const notifs = useNotifs();
-  const [notifOpen, setNotifOpen] = useState(false);
-  const leidas = (() => { try { return JSON.parse(localStorage.getItem("sg_notifs_leidas") || "[]"); } catch { return []; } })();
-  const unread = notifs.filter(n => n.activa !== false && !leidas.includes(n.id)).length;
-
-  const navItems = [{ id:"home", label:"Inicio" }, { id:"store", label:"Tienda" }, { id:"nexus", label:"Nexus IA" }];
-  return (
-    <>
-      <div style={{ position:"fixed", top:0, left:0, right:0, zIndex:300, background:"rgba(8,8,14,0.85)", backdropFilter:"blur(24px)", borderBottom:"1px solid rgba(255,255,255,0.08)", height:64 }}>
-        <div style={{ width:"100%", maxWidth:1100, margin:"0 auto", padding:"0 32px", height:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", boxSizing:"border-box" }}>
-          {/* Logo */}
-          <img src={logo} onClick={onLogoTap} style={{ height:60, width:60, objectFit:"contain", cursor:"pointer" }}/>
-          {/* Nav links */}
-          <div style={{ display:"flex", gap:4 }}>
-            {navItems.map(item => {
-              const on = screen === item.id;
-              return (
-                <button key={item.id} onClick={()=>setScreen(item.id)}
-                  style={{ background: on ? "rgba(123,111,255,0.15)" : "none", border: on ? "1px solid rgba(123,111,255,0.3)" : "1px solid transparent", borderRadius:10, color: on ? "#7B6FFF" : "#F0EDE8", fontSize:14, fontWeight: on ? 700 : 400, fontFamily:F, cursor:"pointer", padding:"8px 20px", transition:"all 0.15s" }}>
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
-          {/* Right side */}
-          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-            {/* Cart */}
-            <button onClick={onCartClick} style={{ position:"relative", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:COLORS.text, cursor:"pointer", width:40, height:40, display:"flex", alignItems:"center", justifyContent:"center" }}>
-              <CartIcon count={cartCount}/>
-            </button>
-            {/* Notif bell */}
-            <div onClick={()=>setNotifOpen(true)} style={{ position:"relative", width:40, height:40, borderRadius:10, background:"rgba(255,255,255,0.06)", border:`1px solid rgba(255,255,255,0.12)`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2a6 6 0 0 0-6 6c0 6-3 8-3 8h18s-3-2-3-8a6 6 0 0 0-6-6z" fill="none" stroke={unread > 0 ? "#7B6FFF" : "#F0EDE8"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" fill="none" stroke={unread > 0 ? "#7B6FFF" : "#F0EDE8"} strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-              {unread > 0 && <span style={{ position:"absolute", top:-4, right:-4, background:"#FF4D6A", borderRadius:"50%", minWidth:16, height:16, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:800, color:"#fff", padding:"0 3px" }}>{unread}</span>}
-            </div>
-          </div>
-        </div>
-      </div>
-      {notifOpen && <NotifPanel onClose={()=>setNotifOpen(false)}/>}
-    </>
-  );
-}
-
-function DesktopHome({ setScreen, onLogoTap, onAddToCart, onBuyNow, cart, onCartClick }) {
-  const tasa = useTasa();
-  const products = useProducts();
-  const banner = useBanner();
-  const active = products.filter(p => p.active !== false);
-  const [detailCard, setDetailCard] = useState(null);
-  if (detailCard) {
-    window.scrollTo(0, 0);
-    return (
-      <div style={{ width:"100%", maxWidth:600, margin:"0 auto", padding:"80px 32px 60px", boxSizing:"border-box" }}>
-        <CardDetailScreen card={detailCard} onBack={()=>{ setDetailCard(null); window.scrollTo(0,0); }} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} tasa={tasa}/>
-      </div>
-    );
-  }
-  return (
-    <div style={{ width:"100%", maxWidth:1100, margin:"0 auto", padding:"90px 32px 60px", boxSizing:"border-box" }}>
-      {/* Banner */}
-      {banner.visible !== false && (
-        <div style={{ background:`linear-gradient(135deg,rgba(123,111,255,0.12) 0%,rgba(26,26,48,0.8) 100%)`, borderRadius:20, padding:"32px 40px", marginBottom:40, border:"1px solid rgba(123,111,255,0.2)", position:"relative", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"space-between", gap:32 }}>
-          <div style={{ position:"absolute", top:-40, right:-40, width:200, height:200, borderRadius:"50%", background:"rgba(123,111,255,0.08)", filter:"blur(60px)" }}/>
-          <div>
-            <p style={{ color:"#7B6FFF", fontSize:11, fontFamily:F, margin:"0 0 8px", letterSpacing:"0.15em", fontWeight:700 }}><GlowDot/>{banner.badge||"NEXUS IA DISPONIBLE"}</p>
-            <h2 style={{ color:COLORS.text, fontSize:28, fontWeight:900, margin:"0 0 8px", lineHeight:1.2, fontFamily:F }}>{banner.title}</h2>
-            <p style={{ color:COLORS.textMuted, fontSize:15, margin:0, fontFamily:F }}>{banner.subtitle}</p>
-          </div>
-          <button onClick={()=>setScreen("nexus")} style={{ flexShrink:0, background:"rgba(123,111,255,0.2)", color:"#A89FFF", border:"1px solid rgba(123,111,255,0.4)", borderRadius:12, padding:"12px 28px", fontSize:14, fontWeight:800, fontFamily:F, cursor:"pointer", whiteSpace:"nowrap" }}>{banner.btn}</button>
-        </div>
-      )}
-
-      {/* Populares */}
-      <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, marginBottom:16, letterSpacing:"0.1em" }}>POPULARES EN LA TIENDA</p>
-      <div style={{ marginBottom:40 }}>
-        <style>{`.sg-desktop-cards .sg-card-item { min-width: 200px !important; width: 200px !important; } .sg-desktop-cards .sg-card-item img { height: 130px !important; }`}</style>
-        <div className="sg-desktop-cards">
-          <AutoScrollCards cards={active.filter(p=>p.featured).slice(0,6)} onCardClick={setDetailCard} cardWidth={200} cardHeight={130}/>
-        </div>
-      </div>
-
-      {/* Últimas publicaciones */}
-      <div style={{ maxWidth:"60%", margin:"0 auto" }}>
-        <LoUltimo/>
-      </div>
-    </div>
-  );
-}
-
-function DesktopStore({ onAddToCart, onBuyNow, cart, onCartClick }) {
-  const [filter, setFilter] = useState("Todos");
-  const [search, setSearch] = useState("");
-  const [detailCard, setDetailCard] = useState(null);
-  const tasa = useTasa();
-  const products = useProducts();
-  const filters = ["Todos","Consola","PC","Mobile"];
-  const active = products.filter(p => p.active !== false);
-
-  useEffect(() => {
-    window.scrollTo({ top:0, behavior:"instant" });
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-  }, [detailCard]);
-
-  if (detailCard) {
-    return (
-      <div style={{ width:"100%", maxWidth:600, margin:"0 auto", padding:"80px 32px 60px", boxSizing:"border-box" }}>
-        <CardDetailScreen card={detailCard} onBack={()=>{ setDetailCard(null); }} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} tasa={tasa}/>
-      </div>
-    );
-  }
-  const filtered = active.filter(c => {
-    const cats = Array.isArray(c.category) ? c.category : [c.category].filter(Boolean);
-    const matchCat = filter==="Todos" || cats.includes(filter);
-    const matchSearch = !search || c.name.toLowerCase().includes(search.toLowerCase());
-    return matchCat && matchSearch;
-  }).sort((a,b) => { if(a.low_priority&&!b.low_priority) return 1; if(!a.low_priority&&b.low_priority) return -1; return 0; });
-
-  return (
-    <div style={{ width:"100%", maxWidth:1100, margin:"0 auto", padding:"90px 32px 60px", boxSizing:"border-box", display:"flex", gap:28 }}>
-      {/* Sidebar filtros */}
-      <div style={{ width:200, flexShrink:0 }}>
-        <h2 style={{ color:COLORS.text, fontSize:20, fontWeight:900, margin:"0 0 20px", fontFamily:F }}>Tienda</h2>
-        <p style={{ color:COLORS.textMuted, fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 10px" }}>CATEGORÍA</p>
-        <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
-          {filters.map(f => (
-            <button key={f} onClick={()=>setFilter(f)} style={{ background:filter===f?"rgba(123,111,255,0.15)":"none", border:`1px solid ${filter===f?"rgba(123,111,255,0.3)":"transparent"}`, borderRadius:10, color:filter===f?"#7B6FFF":"#F0EDE8", fontSize:13, fontWeight:filter===f?700:400, fontFamily:F, cursor:"pointer", padding:"9px 14px", textAlign:"left", transition:"all 0.15s" }}>{f}</button>
-          ))}
-        </div>
-      </div>
-
-      {/* Contenido */}
-      <div style={{ flex:1, minWidth:0 }}>
-        {/* Buscador */}
-        <div style={{ background:"rgba(255,255,255,0.05)", borderRadius:14, border:"1px solid rgba(255,255,255,0.10)", padding:"12px 16px", display:"flex", alignItems:"center", gap:12, marginBottom:24 }}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0 }}>
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar en la tienda..." style={{ background:"none", border:"none", outline:"none", color:COLORS.text, fontSize:14, fontFamily:F, flex:1 }}/>
-          {search && <button onClick={()=>setSearch("")} style={{ background:"rgba(255,255,255,0.08)", border:"none", borderRadius:6, color:COLORS.textMuted, cursor:"pointer", width:22, height:22, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12 }}>✕</button>}
-        </div>
-        {/* Grid columnas */}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:14 }}>
-          {filtered.map(card => (
-            <div key={card.id} onClick={()=>setDetailCard(card)} style={{ background:COLORS.card, borderRadius:16, border:`1px solid ${COLORS.border}`, cursor:"pointer", overflow:"hidden", padding:4, transition:"transform 0.15s" }}
-              onMouseEnter={e=>e.currentTarget.style.transform="translateY(-3px)"}
-              onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
-              <div style={{ position:"relative" }}>
-                <img src={getImg(card)} style={{ width:"100%", height:"auto", objectFit:"contain", display:"block", borderRadius:12, background:"rgba(255,255,255,0.03)" }}/>
-                {card.tag && <span style={{ position:"absolute", top:8, right:8, background:card.tag==="Oferta"?COLORS.danger:"rgba(0,0,0,0.55)", backdropFilter:"blur(8px)", color:"#fff", fontSize:9, fontFamily:F, fontWeight:700, padding:"2px 7px", borderRadius:4 }}>{card.tag}</span>}
-              </div>
-              <div style={{ padding:"12px 14px" }}>
-                <p style={{ color:COLORS.text, fontWeight:700, fontSize:13, margin:"0 0 2px", fontFamily:F }}>{card.name}</p>
-                <p style={{ color:COLORS.textSub, fontSize:10, margin:"0 0 10px", fontFamily:F }}>
-                  {(() => { const a=(card.amounts||[])[0]; const u=getUsdt(card,a); const num=parseFloat(String(a)); if(u) return `Desde ${fmtBs(null,tasa,parseFloat(u))}`; if(!isNaN(num)) return `Desde ${fmtBs(num,tasa)}`; return `Desde ${a||""}`; })()}
-                </p>
-                <button style={{ width:"100%", background:"rgba(255,255,255,0.10)", color:COLORS.text, border:"1px solid rgba(255,255,255,0.20)", borderRadius:8, padding:"8px", fontSize:11, fontFamily:F, fontWeight:700, cursor:"pointer" }}>VER MONTOS →</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function HomeScreen({ setScreen, onLogoTap, onAddToCart, onBuyNow, cart, onCartClick }) {
   const tasa = useTasa();
   const products = useProducts();
@@ -1092,10 +970,18 @@ function StoreScreen({ onAddToCart, onBuyNow, cart, onCartClick }) {
   const [filter, setFilter] = useState("Todos");
   const [detailCard, setDetailCard] = useState(null);
   const [search, setSearch] = useState("");
+  const [ready, setReady] = useState(false);
   const tasa = useTasa();
   const products = useProducts();
   const filters = ["Todos","Consola","PC","Mobile"];
   const active = products.filter(p => p.active !== false);
+
+  useEffect(() => {
+    if (active.length > 0) {
+      requestAnimationFrame(() => requestAnimationFrame(() => setReady(true)));
+    }
+  }, [active.length]);
+
   if (detailCard) return <CardDetailScreen card={detailCard} onBack={()=>setDetailCard(null)} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} tasa={tasa}/>;
   const filtered = active.filter(c => {
     const cats = Array.isArray(c.category) ? c.category : [c.category].filter(Boolean);
@@ -1107,6 +993,27 @@ function StoreScreen({ onAddToCart, onBuyNow, cart, onCartClick }) {
     if (!a.low_priority && b.low_priority) return -1;
     return 0;
   });
+
+  const StoreSkeletonCard = ({ delay }) => (
+    <div style={{ background:COLORS.card, borderRadius:16, border:`1px solid ${COLORS.border}`, overflow:"hidden", padding:4 }}>
+      <style>{`@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}`}</style>
+      <div style={{ width:"100%", height:90, borderRadius:12,
+        background:"linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.10) 50%,rgba(255,255,255,0.04) 75%)",
+        backgroundSize:"400px 100%", animation:`shimmer 1.4s ease-in-out ${delay}s infinite` }}/>
+      <div style={{ padding:"12px 14px" }}>
+        <div style={{ height:12, borderRadius:6, marginBottom:8, width:"70%",
+          background:"linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.08) 50%,rgba(255,255,255,0.04) 75%)",
+          backgroundSize:"400px 100%", animation:`shimmer 1.4s ease-in-out ${delay+0.1}s infinite` }}/>
+        <div style={{ height:10, borderRadius:6, marginBottom:12, width:"55%",
+          background:"linear-gradient(90deg,rgba(255,255,255,0.03) 25%,rgba(255,255,255,0.06) 50%,rgba(255,255,255,0.03) 75%)",
+          backgroundSize:"400px 100%", animation:`shimmer 1.4s ease-in-out ${delay+0.15}s infinite` }}/>
+        <div style={{ height:30, borderRadius:8,
+          background:"linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.08) 50%,rgba(255,255,255,0.04) 75%)",
+          backgroundSize:"400px 100%", animation:`shimmer 1.4s ease-in-out ${delay+0.2}s infinite` }}/>
+      </div>
+    </div>
+  );
+
   return (
     <div style={{ padding:"24px 20px", paddingBottom:100 }}>
       <div style={{ marginBottom:24 }}>
@@ -1124,33 +1031,313 @@ function StoreScreen({ onAddToCart, onBuyNow, cart, onCartClick }) {
           <button key={f} onClick={()=>setFilter(f)} style={{ background:filter===f?"rgba(255,255,255,0.18)":"rgba(255,255,255,0.06)", color:filter===f?COLORS.text:COLORS.textMuted, border:`1px solid ${filter===f?"rgba(255,255,255,0.30)":"rgba(255,255,255,0.08)"}`, borderRadius:20, padding:"6px 16px", fontSize:12, fontWeight:filter===f?700:400, fontFamily:F, cursor:"pointer", whiteSpace:"nowrap" }}>{f}</button>
         ))}
       </div>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-        {filtered.map(card=>(
-          <div key={card.id} onClick={()=>setDetailCard(card)} style={{ background:COLORS.card, borderRadius:16, border:`1px solid ${COLORS.border}`, cursor:"pointer", overflow:"hidden", padding:4 }}>
-            <div style={{ position:"relative" }}>
-              <img src={getImg(card)} style={{ width:"100%", height:90, objectFit:"cover", display:"block", borderRadius:12 }}/>
-              {card.tag && <span style={{ position:"absolute", top:8, right:8, background:card.tag==="Oferta"?COLORS.danger:"rgba(0,0,0,0.55)", backdropFilter:"blur(8px)", color:"#fff", fontSize:9, fontFamily:F, fontWeight:700, padding:"2px 7px", borderRadius:4 }}>{card.tag}</span>}
+
+      {/* Skeleton mientras carga */}
+      {!ready && active.length === 0 && (
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+          {[0, 0.15, 0.3, 0.45, 0.6, 0.75].map((d,i) => <StoreSkeletonCard key={i} delay={d}/>)}
+        </div>
+      )}
+
+      {/* Grid con fade-in */}
+      {active.length > 0 && (
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12,
+          opacity: ready ? 1 : 0,
+          transform: ready ? "translateY(0)" : "translateY(12px)",
+          transition:"opacity 0.35s ease, transform 0.35s ease" }}>
+          {filtered.map((card, idx)=>(
+            <div key={card.id} onClick={()=>setDetailCard(card)}
+              style={{ background:COLORS.card, borderRadius:16, border:`1px solid ${COLORS.border}`, cursor:"pointer", overflow:"hidden", padding:4,
+                opacity: ready ? 1 : 0,
+                transform: ready ? "translateY(0)" : "translateY(8px)",
+                transition:`opacity 0.3s ease ${idx*0.04}s, transform 0.3s ease ${idx*0.04}s` }}>
+              <div style={{ position:"relative" }}>
+                <FadeImg src={getImg(card)} style={{ width:"100%", height:90, objectFit:"cover", display:"block", borderRadius:12 }}/>
+                {card.tag && <span style={{ position:"absolute", top:8, right:8, background:card.tag==="Oferta"?COLORS.danger:"rgba(0,0,0,0.55)", backdropFilter:"blur(8px)", color:"#fff", fontSize:9, fontFamily:F, fontWeight:700, padding:"2px 7px", borderRadius:4 }}>{card.tag}</span>}
+              </div>
+              <div style={{ padding:"12px 14px" }}>
+                <p style={{ color:COLORS.text, fontWeight:700, fontSize:13, margin:"0 0 2px", fontFamily:F }}>{card.name}</p>
+                <p style={{ color:COLORS.textSub, fontSize:10, margin:"0 0 12px", fontFamily:F }}>
+                  {(() => {
+                    const a = (card.amounts||[])[0];
+                    const u = getUsdt(card, a);
+                    const num = parseFloat(String(a));
+                    if (u) return `Desde ${fmtBs(null, tasa, parseFloat(u))}`;
+                    if (!isNaN(num)) return `Desde ${fmtBs(num, tasa)}`;
+                    return `Desde ${a||""}`;
+                  })()}
+                </p>
+                <button style={{ width:"100%", background:"rgba(255,255,255,0.10)", color:COLORS.text, border:"1px solid rgba(255,255,255,0.20)", borderRadius:8, padding:"8px", fontSize:11, fontFamily:F, fontWeight:700, cursor:"pointer" }}>VER MONTOS →</button>
+              </div>
             </div>
-            <div style={{ padding:"12px 14px" }}>
-              <p style={{ color:COLORS.text, fontWeight:700, fontSize:13, margin:"0 0 2px", fontFamily:F }}>{card.name}</p>
-              <p style={{ color:COLORS.textSub, fontSize:10, margin:"0 0 12px", fontFamily:F }}>
-                {(() => {
-                  const a = (card.amounts||[])[0];
-                  const u = getUsdt(card, a);
-                  const num = parseFloat(String(a));
-                  if (u) return `Desde ${fmtBs(null, tasa, parseFloat(u))}`;
-                  if (!isNaN(num)) return `Desde ${fmtBs(num, tasa)}`;
-                  return `Desde ${a||""}`;
-                })()}
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+function GameDetailScreen({ card, onBack, onAddToCart, onBuyNow, cart, onCartClick, tasa }) {
+  const [added, setAdded] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [oferta, setOferta] = useState(null);
+  const t = tasa || GLOBAL_TASA;
+  const cartCount = cart.reduce((s, i) => s + i.quantity, 0);
+
+  useEffect(() => {
+    const el = document.querySelector("[data-main-scroll]");
+    if (el) el.scrollTop = 0;
+    requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)));
+    // Buscar oferta activa para este juego
+    if (card.tag === "Oferta") {
+      fetch(`${SUPABASE_URL}/rest/v1/game_ofertas?game_id=eq.${card.id}&active=eq.true&select=*`, { headers: HEADERS })
+        .then(r=>r.json()).then(rows=>{ if(rows?.[0]) setOferta(rows[0]); }).catch(()=>{});
+    }
+  }, []);
+
+  // Fixed price — first usdt_price or first amount
+  const usdtVal = card.usdt_prices ? parseFloat(Object.values(card.usdt_prices)[0]) : null;
+  const amt = (card.amounts||[])[0];
+  const numAmt = parseFloat(String(amt));
+  const fixedAmount = amt ? (isNaN(numAmt) ? amt : `$${numAmt}`) : "$0";
+
+  // Oferta data
+  const isOnSale = card.tag === "Oferta" && oferta;
+  const originalPrice = isOnSale ? parseFloat(Object.values(oferta.original_prices)[0]) : null;
+  const discount = isOnSale && originalPrice ? Math.round((1 - usdtVal / originalPrice) * 100) : null;
+
+  const handleAddToCart = () => {
+    onAddToCart({ ...card, selectedAmount: fixedAmount, quantity: 1 });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
+  };
+  const handleBuyNow = () => {
+    const alreadyInCart = cart.some(i => i.id === card.id && i.selectedAmount === fixedAmount);
+    if (!alreadyInCart) onAddToCart({ ...card, selectedAmount: fixedAmount, quantity: 1 });
+    if (onBuyNow) onBuyNow();
+  };
+
+  return (
+    <div style={{ minHeight:"100vh", paddingBottom:120, background:COLORS.bg,
+      opacity: visible ? 1 : 0,
+      transform: visible ? "translateY(0)" : "translateY(24px)",
+      transition:"opacity 0.28s ease, transform 0.28s cubic-bezier(0.22,1,0.36,1)" }}>
+      {/* Header */}
+      <div style={{ padding:"20px 20px 16px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <button onClick={onBack} style={{ background:"rgba(255,255,255,0.08)", backdropFilter:"blur(12px)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:12, color:COLORS.text, cursor:"pointer", width:40, height:40, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>←</button>
+        <div style={{ textAlign:"center" }}>
+          <h2 style={{ color:COLORS.text, fontSize:17, fontWeight:800, margin:0, fontFamily:F }}>{card.name}</h2>
+        </div>
+        <button onClick={onCartClick} style={{ position:"relative", background:"rgba(255,255,255,0.08)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:12, cursor:"pointer", width:44, height:44, display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <CartIcon count={cartCount}/>
+        </button>
+      </div>
+
+      {/* Cover image */}
+      <div style={{ margin:"0 20px 12px", borderRadius:20, overflow:"hidden", border:"1px solid rgba(255,255,255,0.10)", boxShadow:"0 8px 40px rgba(0,0,0,0.5)" }}>
+        <img src={getImg(card)} style={{ width:"100%", height:220, objectFit:"cover", display:"block" }}/>
+      </div>
+
+      <div style={{ padding:"0 20px" }}>
+        {/* Tag badge */}
+        {card.tag && (
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10, flexWrap:"wrap" }}>
+            <span style={{ background:card.tag==="Oferta"?"rgba(255,77,106,0.15)":"rgba(255,255,255,0.08)", border:`1px solid ${card.tag==="Oferta"?"rgba(255,77,106,0.35)":"rgba(255,255,255,0.15)"}`, borderRadius:8, padding:"4px 10px", color:card.tag==="Oferta"?COLORS.danger:COLORS.textMuted, fontSize:10, fontFamily:F, fontWeight:700 }}>{card.tag}</span>
+            {isOnSale && oferta?.expires_at && (() => {
+              const daysLeft = Math.ceil((new Date(oferta.expires_at) - new Date()) / (1000*60*60*24));
+              return (
+                <span style={{ background:"rgba(243,186,47,0.12)", border:"1px solid rgba(243,186,47,0.3)", borderRadius:8, padding:"4px 10px", color:"#F3BA2F", fontSize:10, fontFamily:F, fontWeight:700 }}>
+                  ⏱ Finaliza en {daysLeft} día{daysLeft!==1?"s":""}
+                </span>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* Price card */}
+        <div style={{ background:"rgba(255,255,255,0.06)", border:`1px solid ${isOnSale?"rgba(255,77,106,0.25)":"rgba(255,255,255,0.10)"}`, borderRadius:20, padding:"16px 20px", marginBottom:16 }}>
+          <p style={{ color:COLORS.textMuted, fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.12em", margin:"0 0 10px" }}>PRECIO</p>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+            <div>
+              <p style={{ color:COLORS.text, fontSize:21, fontWeight:900, fontFamily:F, margin:0 }}>
+                {usdtVal ? fmtBs(null, t, usdtVal) : !isNaN(numAmt) ? fmtBs(numAmt, t) : fixedAmount}
               </p>
-              <button style={{ width:"100%", background:"rgba(255,255,255,0.10)", color:COLORS.text, border:"1px solid rgba(255,255,255,0.20)", borderRadius:8, padding:"8px", fontSize:11, fontFamily:F, fontWeight:700, cursor:"pointer" }}>VER MONTOS →</button>
+              <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:4 }}>
+                {usdtVal && <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, margin:0 }}>{usdtVal.toFixed(2)} USDT</p>}
+                {isOnSale && originalPrice && (
+                  <p style={{ color:"rgba(255,255,255,0.3)", fontSize:11, fontFamily:F, margin:0, textDecoration:"line-through" }}>{originalPrice.toFixed(2)} USDT</p>
+                )}
+              </div>
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:4, alignItems:"flex-end" }}>
+              {/* Descuento encima del badge de plataforma */}
+              {discount !== null && (
+                <span style={{ background:"rgba(255,77,106,0.20)", border:"1px solid rgba(255,77,106,0.45)", borderRadius:8, padding:"4px 8px", color:"#FF4D6A", fontSize:11, fontFamily:F, fontWeight:800 }}>-{discount}%</span>
+              )}
+              {card.category && (Array.isArray(card.category)?card.category:[card.category]).map(c=>(
+                <span key={c} style={{ background:"rgba(123,111,255,0.15)", border:"1px solid rgba(123,111,255,0.3)", borderRadius:8, padding:"4px 10px", color:"#A89FFF", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.06em" }}>{c}</span>
+              ))}
             </div>
           </div>
-        ))}
+        </div>
+
+        {/* Description */}
+        {card.description && (
+          <div style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:14, padding:"14px 16px", marginBottom:20 }}>
+            <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 6px" }}>DESCRIPCIÓN</p>
+            <p style={{ color:"#F0EDE8", fontSize:13, fontFamily:F, lineHeight:1.6, margin:0 }}>{card.description}</p>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div style={{ display:"flex", gap:10 }}>
+          <button onClick={handleBuyNow} style={{ flex:1, padding:"15px 10px", background:"rgba(255,255,255,0.16)", border:"1px solid rgba(255,255,255,0.30)", borderRadius:14, color:COLORS.text, fontSize:13, fontWeight:800, fontFamily:F, cursor:"pointer", letterSpacing:"0.04em", backdropFilter:"blur(16px)" }}>Comprar ahora</button>
+          <button onClick={handleAddToCart} style={{ flex:1, padding:"15px 10px", background:added?"rgba(120,220,120,0.18)":"rgba(255,255,255,0.08)", border:`1px solid ${added?"rgba(120,220,120,0.5)":"rgba(255,255,255,0.18)"}`, borderRadius:14, color:added?"rgba(120,220,120,1)":COLORS.text, fontSize:13, fontWeight:800, fontFamily:F, cursor:"pointer", backdropFilter:"blur(16px)", transition:"all 0.2s" }}>
+            {added ? "✓ AGREGADO" : "AGREGAR AL CARRITO"}
+          </button>
+        </div>
+        <p style={{ color:COLORS.textMuted, fontSize:10, textAlign:"center", fontFamily:F, marginTop:14 }}>🔒 Entrega digital segura · 10–30 minutos</p>
       </div>
     </div>
   );
 }
+
+function GamesScreen({ onAddToCart, onBuyNow, cart, onCartClick }) {
+  const [filter, setFilter] = useState("Todos");
+  const [detailCard, setDetailCard] = useState(null);
+  const [search, setSearch] = useState("");
+  const [ready, setReady] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(20);
+  const tasa = useTasa();
+  const games = useGames();
+  const filters = ["Todos","Xbox","Steam"];
+  const active = games.filter(p => p.active !== false);
+
+  useEffect(() => {
+    if (active.length > 0) {
+      requestAnimationFrame(() => requestAnimationFrame(() => setReady(true)));
+    }
+  }, [active.length]);
+
+  // Reset pagination when filter or search changes
+  useEffect(() => { setVisibleCount(20); }, [filter, search]);
+
+  if (detailCard) return <GameDetailScreen card={detailCard} onBack={()=>setDetailCard(null)} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} tasa={tasa}/>;
+
+  const filtered = active.filter(c => {
+    const cats = Array.isArray(c.category) ? c.category : [c.category].filter(Boolean);
+    const matchCat = filter==="Todos" || cats.includes(filter);
+    const matchSearch = !search || c.name.toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchSearch;
+  }).sort((a, b) => {
+    // 1. Ofertas activas primero
+    const aOnSale = a.tag === "Oferta";
+    const bOnSale = b.tag === "Oferta";
+    if (aOnSale && !bOnSale) return -1;
+    if (!aOnSale && bOnSale) return 1;
+    // 2. Baja prioridad al final
+    if (a.low_priority && !b.low_priority) return 1;
+    if (!a.low_priority && b.low_priority) return -1;
+    return 0;
+  });
+
+  const visible = filtered.slice(0, visibleCount);
+  const hasMore = filtered.length > visibleCount;
+
+  const SkeletonCard = ({ delay }) => (
+    <div style={{ background:COLORS.card, borderRadius:16, border:`1px solid ${COLORS.border}`, padding:"8px 8px 12px" }}>
+      <style>{`@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}`}</style>
+      <div style={{ width:"100%", height:110, borderRadius:12, marginBottom:10,
+        background:"linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.10) 50%,rgba(255,255,255,0.04) 75%)",
+        backgroundSize:"400px 100%", animation:`shimmer 1.4s ease-in-out ${delay}s infinite` }}/>
+      <div style={{ height:12, borderRadius:6, marginBottom:8, width:"80%",
+        background:"linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.08) 50%,rgba(255,255,255,0.04) 75%)",
+        backgroundSize:"400px 100%", animation:`shimmer 1.4s ease-in-out ${delay+0.1}s infinite` }}/>
+      <div style={{ height:24, borderRadius:8, width:"55%",
+        background:"linear-gradient(90deg,rgba(123,111,255,0.08) 25%,rgba(123,111,255,0.16) 50%,rgba(123,111,255,0.08) 75%)",
+        backgroundSize:"400px 100%", animation:`shimmer 1.4s ease-in-out ${delay+0.2}s infinite` }}/>
+    </div>
+  );
+
+  return (
+    <div style={{ padding:"24px 20px", paddingBottom:100 }}>
+      <div style={{ marginBottom:24 }}>
+        <h2 style={{ color:COLORS.text, fontSize:26, fontWeight:900, margin:0, fontFamily:F }}>Juegos</h2>
+      </div>
+      <div style={{ background:"rgba(255,255,255,0.05)", borderRadius:16, border:"1px solid rgba(255,255,255,0.10)", padding:"12px 16px", display:"flex", alignItems:"center", gap:12, marginBottom:16, transition:"border 0.2s", ...(search ? { border:"1px solid rgba(123,111,255,0.4)" } : {}) }}>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0 }}>
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar juegos..." style={{ background:"none", border:"none", outline:"none", color:COLORS.text, fontSize:14, fontFamily:F, flex:1 }}/>
+        {search && <button onClick={()=>setSearch("")} style={{ background:"rgba(255,255,255,0.08)", border:"none", borderRadius:6, color:COLORS.textMuted, cursor:"pointer", width:22, height:22, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, flexShrink:0 }}>✕</button>}
+      </div>
+      <div style={{ display:"flex", gap:8, marginBottom:20, overflowX:"auto" }}>
+        {filters.map(f=>(
+          <button key={f} onClick={()=>setFilter(f)} style={{ background:filter===f?"rgba(255,255,255,0.18)":"rgba(255,255,255,0.06)", color:filter===f?COLORS.text:COLORS.textMuted, border:`1px solid ${filter===f?"rgba(255,255,255,0.30)":"rgba(255,255,255,0.08)"}`, borderRadius:20, padding:"6px 16px", fontSize:12, fontWeight:filter===f?700:400, fontFamily:F, cursor:"pointer", whiteSpace:"nowrap" }}>{f}</button>
+        ))}
+      </div>
+      {filtered.length === 0 && (
+        <div style={{ textAlign:"center", padding:"60px 20px" }}>
+          <div style={{ fontSize:48, marginBottom:12 }}>🎮</div>
+          <p style={{ color:COLORS.textMuted, fontFamily:F, fontSize:14 }}>No hay juegos disponibles aún</p>
+        </div>
+      )}
+      {/* Skeleton mientras carga */}
+      {!ready && active.length === 0 && (
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+          {[0,0.15,0.3,0.45,0.6,0.75].map((d,i) => <SkeletonCard key={i} delay={d}/>)}
+        </div>
+      )}
+
+      {/* Grid con fade-in al entrar */}
+      {active.length > 0 && (
+        <div style={{ opacity: ready ? 1 : 0, transform: ready ? "translateY(0)" : "translateY(12px)", transition:"opacity 0.35s ease, transform 0.35s ease" }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+            {visible.map((card,idx)=>{
+              const price = card.usdt_prices ? Object.values(card.usdt_prices)[0] : null;
+              const amt = (card.amounts||[])[0];
+              const num = parseFloat(String(amt));
+              const isOnSale = card.tag === "Oferta";
+              return (
+                <div key={card.id} onClick={()=>setDetailCard(card)}
+                  style={{ background:COLORS.card, borderRadius:16, border:`1px solid ${isOnSale?"rgba(255,77,106,0.3)":COLORS.border}`, cursor:"pointer", padding:"8px 8px 12px", display:"flex", flexDirection:"column",
+                    opacity: ready ? 1 : 0,
+                    transform: ready ? "translateY(0)" : "translateY(8px)",
+                    transition:`opacity 0.3s ease ${idx*0.04}s, transform 0.3s ease ${idx*0.04}s` }}>
+                  <div style={{ position:"relative", marginBottom:10 }}>
+                    <FadeImg src={getImg(card)} style={{ width:"100%", height:110, objectFit:"cover", display:"block", borderRadius:12, boxShadow:"0 6px 20px rgba(0,0,0,0.5)" }}/>
+                    {card.tag && <span style={{ position:"absolute", top:8, right:8, background:isOnSale?COLORS.danger:"rgba(0,0,0,0.55)", backdropFilter:"blur(8px)", color:"#fff", fontSize:9, fontFamily:F, fontWeight:700, padding:"2px 7px", borderRadius:4 }}>{card.tag}</span>}
+                    {card.category && (
+                      <span style={{ position:"absolute", bottom:8, left:8, background:"rgba(0,0,0,0.6)", backdropFilter:"blur(8px)", color:"rgba(255,255,255,0.8)", fontSize:8, fontFamily:F, fontWeight:700, padding:"2px 6px", borderRadius:4, letterSpacing:"0.05em" }}>
+                        {Array.isArray(card.category)?card.category.join(" · "):card.category}
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ color:COLORS.text, fontWeight:700, fontSize:12, margin:"0 0 8px", fontFamily:F, lineHeight:1.3, padding:"0 4px" }}>{card.name}</p>
+                  <div style={{ padding:"0 4px" }}>
+                    <span style={{ background:isOnSale?"rgba(255,77,106,0.20)":"rgba(123,111,255,0.25)", border:`1px solid ${isOnSale?"rgba(255,77,106,0.45)":"rgba(123,111,255,0.4)"}`, borderRadius:8, padding:"4px 10px", color:"#fff", fontSize:12, fontWeight:800, fontFamily:F, display:"inline-block" }}>
+                      {price ? fmtBs(null, tasa, parseFloat(price)) : !isNaN(num) ? fmtBs(num, tasa) : amt||""}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Ver más */}
+          {hasMore && (
+            <div style={{ textAlign:"center", marginTop:24 }}>
+              <button onClick={()=>setVisibleCount(v=>v+20)}
+                style={{ padding:"12px 32px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.15)", borderRadius:14, color:COLORS.text, fontSize:13, fontWeight:700, fontFamily:F, cursor:"pointer", backdropFilter:"blur(10px)" }}>
+                Ver más
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function NexusScreen() {
   const [loaded, setLoaded] = useState(false);
   return (
@@ -1283,8 +1470,8 @@ function CartPanel({ cart, onClose, onRemove, onUpdateQty, onCheckout }) {
   const useUsdt = cart.some(i => getUsdt(i, i.selectedAmount.replace("$","").trim()));
   return (
     <>
-      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.65)", zIndex:600, backdropFilter:"blur(4px)" }}/>
-      <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:560, background:"#12121E", border:"1px solid rgba(255,255,255,0.12)", borderRadius:"24px 24px 0 0", zIndex:601, padding:"0 0 32px", maxHeight:"82vh", overflowY:"auto" }}>
+      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.65)", zIndex:300, backdropFilter:"blur(4px)" }}/>
+      <div style={{ position:"fixed", bottom:0, left:0, width:"100%", background:"#12121E", border:"1px solid rgba(255,255,255,0.12)", borderRadius:"24px 24px 0 0", zIndex:301, padding:"0 0 32px", maxHeight:"82vh", overflowY:"auto" }}>
         <div style={{ display:"flex", justifyContent:"center", padding:"12px 0 4px" }}><div style={{ width:36, height:4, borderRadius:2, background:"rgba(255,255,255,0.2)" }}/></div>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 20px 16px" }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}><CartIcon count={0}/><h2 style={{ color:COLORS.text, fontSize:20, fontWeight:800, margin:0, fontFamily:F }}>Mi Carrito</h2></div>
@@ -1305,6 +1492,7 @@ function CartPanel({ cart, onClose, onRemove, onUpdateQty, onCheckout }) {
                   {(() => {
                     const usdt = getUsdt(item, rawAmt);
                     const isPureNum = !isNaN(val) && !/[a-zA-Z]/.test(rawAmt);
+                    if (rawAmt === "price") return null;
                     const label = isPureNum ? `$${val} USD` : rawAmt;
                     return <p style={{ color:"rgba(180,180,255,0.9)", fontWeight:700, fontSize:12, margin:0, fontFamily:F }}>{label}</p>;
                   })()}
@@ -1358,12 +1546,17 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
   const [guestEmail, setGuestEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [visible, setVisible] = useState(false);
   const paypalRef = useRef(null);
   const paypalRendered = useRef(false);
+
+  useEffect(() => {
+    requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)));
+  }, []);
   const isGuest = !session?.user?.email;
   const customerEmail = isGuest ? guestEmail.trim() : session.user.email;
   const tasa = useTasa();
-  const total = cart.reduce((s, i) => s + parseFloat(i.selectedAmount.replace("$","")) * i.quantity, 0);
+  const total = cart.reduce((s, i) => { const r=i.selectedAmount.replace("$","").trim(); const n=parseFloat(r); return s+(!isNaN(n)?n*i.quantity:0); }, 0);
   const totalUsdt = cart.reduce((s, i) => { const r=i.selectedAmount.replace("$","").trim(); const u=getUsdt(i,r); const n=parseFloat(r); return s+(u?parseFloat(u)*i.quantity:(!isNaN(n)?n*i.quantity:0)); }, 0);
   const useUsdt = cart.some(i => getUsdt(i, i.selectedAmount.replace("$","").trim()));
   const paypalSdkReady = usePayPalSDK();
@@ -1462,7 +1655,10 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
   };
 
   return (
-    <div style={{ minHeight:"100vh", paddingBottom:120, background:COLORS.bg }}>
+    <div style={{ minHeight:"100vh", paddingBottom:120, background:COLORS.bg,
+      opacity: visible ? 1 : 0,
+      transform: visible ? "translateY(0)" : "translateY(24px)",
+      transition:"opacity 0.28s ease, transform 0.28s cubic-bezier(0.22,1,0.36,1)" }}>
       <div style={{ padding:"20px 20px 16px", display:"flex", alignItems:"center", gap:14 }}>
         <button onClick={onBack} style={{ background:"rgba(255,255,255,0.08)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:12, color:COLORS.text, cursor:"pointer", width:40, height:40, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>←</button>
         <div>
@@ -1485,7 +1681,7 @@ function CheckoutScreen({ cart, onBack, onOrderCreated, session }) {
                 <img src={getImg(item)} style={{ width:44, height:32, objectFit:"cover", borderRadius:6, flexShrink:0 }}/>
                 <div style={{ flex:1, minWidth:0 }}>
                   <p style={{ color:COLORS.text, fontSize:13, fontWeight:700, fontFamily:F, margin:0, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{item.name}</p>
-                  <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, margin:0 }}>{item.selectedAmount} × {item.quantity}</p>
+                  <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, margin:0 }}>{item.selectedAmount !== "price" ? `${item.selectedAmount} × ${item.quantity}` : ""}</p>
                 </div>
                 <p style={{ color:COLORS.text, fontSize:12, fontWeight:800, fontFamily:F, margin:0, flexShrink:0 }}>{itemBs}</p>
               </div>
@@ -1706,7 +1902,7 @@ function OrderStatusScreen({ orderId, onBack }) {
                 <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom: i<order.items.length-1?8:0 }}>
                   <div>
                     <p style={{ color:COLORS.text, fontSize:13, fontWeight:700, fontFamily:F, margin:0 }}>{item.name}</p>
-                    <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, margin:0 }}>{item.amount} × {item.quantity}</p>
+                    <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, margin:0 }}>{item.amount && item.amount !== "price" ? `${item.amount} × ${item.quantity}` : ""}</p>
                   </div>
                 </div>
               ))}
@@ -1733,7 +1929,7 @@ function OrderStatusScreen({ orderId, onBack }) {
             </div>
           )}
           <a href={`https://wa.me/${WS_NUMBER}?text=${encodeURIComponent(
-            `Hola, ya verifiqué mi pago:\nPedido: #${orderId?.slice(0,8).toUpperCase()}\nMonto en Bs: ${order.total_bs ? Number(order.total_bs).toLocaleString("es-VE", {minimumFractionDigits:0, maximumFractionDigits:0}) : "—"}\nNro. de referencia: ${order.customer_ref}\nMétodo de pago: ${{pagomovil:"Pago Móvil",binance:"Binance Pay",zinli:"Zinli",paypal:"PayPal"}[order.payment_method] || order.payment_method || "—"}\nProductos:\n${(order.items||[]).map(i => { const amt = i.amount.replace("$","").trim(); const isNum = !isNaN(parseFloat(amt)) && !/[a-zA-Z]/.test(amt); return `- ${i.name} - ${isNum ? "$"+amt : amt} x${i.quantity}`; }).join("\n")}`
+            `Hola, ya verifiqué mi pago:\nPedido: #${orderId?.slice(0,8).toUpperCase()}\nMonto en Bs: ${order.total_bs ? Number(order.total_bs).toLocaleString("es-VE", {minimumFractionDigits:0, maximumFractionDigits:0}) : "—"}\nNro. de referencia: ${order.customer_ref}\nMétodo de pago: ${{pagomovil:"Pago Móvil",binance:"Binance Pay",zinli:"Zinli",paypal:"PayPal"}[order.payment_method] || order.payment_method || "—"}\nProductos:\n${(order.items||[]).map(i => { const amt = i.amount.replace("$","").trim(); const isGame = amt === "price"; const isNum = !isNaN(parseFloat(amt)) && !/[a-zA-Z]/.test(amt); if (isGame) return `- ${i.name}`; return `- ${i.name} - ${isNum ? "$"+amt : amt} x${i.quantity}`; }).join("\n")}`
           )}`} target="_blank" rel="noreferrer"
             style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10, width:"100%", boxSizing:"border-box", padding:"16px", background:"#25D366", borderRadius:14, color:"#fff", fontSize:15, fontWeight:800, fontFamily:F, textDecoration:"none", boxShadow:"0 4px 20px rgba(37,211,102,0.35)" }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.553 4.122 1.523 5.855L0 24l6.29-1.49A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.007-1.37l-.36-.214-3.732.884.916-3.636-.234-.374A9.818 9.818 0 1112 21.818z"/></svg>
@@ -1790,7 +1986,7 @@ function OrderStatusScreen({ orderId, onBack }) {
                       {order.items.map((item,i) => (
                         <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom: i < order.items.length-1 ? 6 : 0 }}>
                           <p style={{ color:"#fff", fontSize:13, fontWeight:700, fontFamily:F, margin:0 }}>{item.name}</p>
-                          <p style={{ color:"#F0EDE8", fontSize:12, fontFamily:F, margin:0 }}>{item.amount} × {item.quantity}</p>
+                          <p style={{ color:"#F0EDE8", fontSize:12, fontFamily:F, margin:0 }}>{item.amount && item.amount !== "price" ? `${item.amount} × ${item.quantity}` : ""}</p>
                         </div>
                       ))}
                     </div>
@@ -1882,7 +2078,7 @@ function OrderStatusScreen({ orderId, onBack }) {
                           <img src={getImg(prod.img_url ? prod : { name: item.name })} style={{ width:44, height:32, objectFit:"cover", borderRadius:8, flexShrink:0 }}/>
                           <div style={{ flex:1 }}>
                             <p style={{ color:COLORS.text, fontSize:13, fontWeight:700, fontFamily:F, margin:0 }}>{item.name}</p>
-                            <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, margin:0 }}>{item.amount} × {item.quantity}</p>
+                            <p style={{ color:COLORS.textMuted, fontSize:11, fontFamily:F, margin:0 }}>{item.amount && item.amount !== "price" ? `${item.amount} × ${item.quantity}` : ""}</p>
                           </div>
                         </div>
                       );
@@ -1955,7 +2151,7 @@ function AdminPanel({ onExit }) {
         </div>
         {/* Tabs */}
         <div style={{ display:"flex", gap:0 }}>
-          {[{id:"orders",label:"Pedidos"},{id:"products",label:"Productos"},{id:"posts",label:"Imágenes"},{id:"notifs",label:"Notifs"},{id:"settings",label:"Ajustes"}].map(t=>(
+          {[{id:"orders",label:"Pedidos"},{id:"products",label:"Productos"},{id:"games",label:"Juegos"},{id:"posts",label:"Imágenes"},{id:"notifs",label:"Notifs"},{id:"settings",label:"Ajustes"}].map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id)} style={{ flex:1, padding:"10px 0", background:"none", border:"none", borderBottom:`2px solid ${tab===t.id?"#7B6FFF":"transparent"}`, color:tab===t.id?"#7B6FFF":"#F0EDE8", fontSize:11, fontWeight:700, fontFamily:F, cursor:"pointer", transition:"all 0.15s" }}>{t.label}</button>
           ))}
         </div>
@@ -1963,6 +2159,7 @@ function AdminPanel({ onExit }) {
       <div style={{ overflowY:"auto", maxHeight:"calc(100vh - 100px)" }}>
         {tab==="orders"   && <AdminOrders/>}
         {tab==="products" && <AdminProducts/>}
+        {tab==="games"    && <AdminGames/>}
         {tab==="posts"    && <AdminPosts/>}
         {tab==="notifs"   && <AdminNotifs/>}
         {tab==="settings" && <AdminSettings/>}
@@ -2193,12 +2390,14 @@ function AdminOrders() {
         </div>
       </div>
       {order.items && order.items.map((item,i)=>{
-        const prod = GLOBAL_PRODUCTS.find(p => p.name === item.name) || {};
+        const prod = GLOBAL_PRODUCTS.find(p => p.name === item.name) || GLOBAL_GAMES.find(p => p.name === item.name) || {};
+        const amt = item.selectedAmount || item.amount || "";
+        const showAmt = amt && amt !== "price";
         return (
           <div key={i} style={{ display:"flex", alignItems:"center", gap:8, background:"rgba(255,255,255,0.03)", borderRadius:8, padding:"6px 10px", marginBottom:3 }}>
             <img src={getImg(prod.img_url ? prod : { name: item.name })} style={{ width:36, height:26, objectFit:"cover", borderRadius:5, flexShrink:0 }} alt={item.name}/>
             <p style={{ color:"#ffffff", fontSize:11, fontFamily:F, fontWeight:600, margin:0, flex:1 }}>{item.name}</p>
-            <span style={{ color:"rgba(255,255,255,0.9)", fontSize:10, fontFamily:F }}>{item.selectedAmount || item.amount} × {item.quantity}</span>
+            {showAmt && <span style={{ color:"rgba(255,255,255,0.9)", fontSize:10, fontFamily:F }}>{amt} × {item.quantity}</span>}
           </div>
         );
       })}
@@ -2348,6 +2547,73 @@ function AdminOrders() {
   );
 }
 
+/* ── Shared imgbb image uploader for products & games ── */
+function ProductImageUploader({ form, setForm }) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const fileRef = useRef(null);
+
+  const compressImage = (file) => new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX = 1200;
+      let { width, height } = img;
+      if (width > MAX) { height = Math.round(height * MAX / width); width = MAX; }
+      else if (height > MAX) { width = Math.round(width * MAX / height); height = MAX; }
+      const canvas = document.createElement("canvas");
+      canvas.width = width; canvas.height = height;
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(blob => resolve(blob), "image/png");
+    };
+    img.src = url;
+  });
+
+  const uploadFile = async (file) => {
+    setUploading(true);
+    setUploadError("");
+    try {
+      const compressed = await compressImage(file);
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(compressed);
+      });
+      const formData = new FormData();
+      formData.append("image", base64);
+      const r = await fetch(`https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_IMGBB_KEY||"8aaeda2ee6569a4e928c4c627caeadf4"}`, { method:"POST", body:formData });
+      const data = await r.json();
+      if (!data.success) throw new Error(data.error?.message || "Error al subir");
+      setForm(p => ({ ...p, img_url: data.data.url }));
+    } catch(e) {
+      setUploadError(e.message || "Error al subir imagen");
+    }
+    setUploading(false);
+  };
+
+  return (
+    <div style={{ marginBottom:10 }}>
+      <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 6px" }}>IMAGEN</p>
+      <input ref={fileRef} type="file" accept="image/*" style={{ display:"none" }}
+        onChange={e=>{ const f=e.target.files[0]; if(f) uploadFile(f); e.target.value=""; }}/>
+      <div style={{ display:"flex", gap:10, alignItems:"center", marginBottom:6 }}>
+        {form.img_url && !uploading && (
+          <img src={form.img_url} style={{ width:60, height:44, objectFit:"cover", borderRadius:8, border:"1px solid rgba(255,255,255,0.15)", flexShrink:0 }}/>
+        )}
+        <div onClick={()=>!uploading && fileRef.current?.click()}
+          style={{ flex:1, padding:"10px 12px", background:"rgba(255,255,255,0.06)", border:`1px dashed ${uploading?"#7B6FFF":form.img_url?"rgba(0,200,150,0.4)":"rgba(255,255,255,0.25)"}`, borderRadius:10, color: uploading?"#7B6FFF": form.img_url?"#00C896":"#F0EDE8", fontSize:12, fontFamily:F, cursor:uploading?"wait":"pointer", textAlign:"center", transition:"all 0.2s" }}>
+          {uploading ? "⏳ Subiendo a imgbb..." : form.img_url ? "✓ Imagen subida — click para cambiar" : "📷 Subir imagen"}
+        </div>
+      </div>
+      {uploadError && <p style={{ color:"#FF4D6A", fontSize:10, fontFamily:F, margin:"0 0 6px" }}>⚠ {uploadError}</p>}
+      <input value={form.img_url||""} onChange={e=>setForm(p=>({...p,img_url:e.target.value}))} placeholder="o pega una URL directamente..." style={{ width:"100%", boxSizing:"border-box", padding:"8px 12px", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:10, color:"#fff", fontSize:12, fontFamily:F, outline:"none" }}/>
+      <p style={{ color:"rgba(255,255,255,0.25)", fontSize:9, fontFamily:F, margin:"4px 0 0" }}>La imagen se sube a imgbb — no ocupa espacio en Supabase ✓</p>
+    </div>
+  );
+}
+
 function ProductFormPanel({ form, setForm, editing, saving, saveProduct, onCancel }) {
   return (
     <div style={{ background:"rgba(123,111,255,0.08)", border:"1px solid rgba(123,111,255,0.25)", borderRadius:16, padding:"16px", marginBottom:16 }}>
@@ -2366,20 +2632,7 @@ function ProductFormPanel({ form, setForm, editing, saving, saveProduct, onCance
         <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 4px" }}>Descripción <span style={{ color:"rgba(255,255,255,0.3)" }}>(opcional)</span></p>
         <textarea value={form.description||""} onChange={e=>setForm(p=>({...p,description:e.target.value}))} placeholder="Describe el producto, plataformas compatibles, beneficios..." rows={3} style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:"#fff", fontSize:13, fontFamily:F, outline:"none", resize:"vertical" }}/>
       </div>
-      <div style={{ marginBottom:10 }}>
-        <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 6px" }}>IMAGEN DEL PRODUCTO</p>
-        <div style={{ display:"flex", gap:10, alignItems:"center" }}>
-          {form.img_url && <img src={form.img_url} style={{ width:60, height:44, objectFit:"cover", borderRadius:8, border:"1px solid rgba(255,255,255,0.15)", flexShrink:0 }}/>}
-          <div style={{ flex:1 }}>
-            <label style={{ display:"block", padding:"10px 12px", background:"rgba(255,255,255,0.06)", border:"1px dashed rgba(255,255,255,0.25)", borderRadius:10, color:"#F0EDE8", fontSize:12, fontFamily:F, cursor:"pointer", textAlign:"center" }}>
-              📷 {form.img_url ? "Cambiar imagen" : "Subir imagen"}
-              <input type="file" accept="image/*" style={{ display:"none" }} onChange={e=>{ const file=e.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=ev=>setForm(p=>({...p,img_url:ev.target.result})); reader.readAsDataURL(file); }}/>
-            </label>
-            <p style={{ color:"rgba(255,255,255,0.3)", fontSize:9, fontFamily:F, margin:"4px 0 0", textAlign:"center" }}>o pega una URL abajo</p>
-          </div>
-        </div>
-        <input value={form.img_url||""} onChange={e=>setForm(p=>({...p,img_url:e.target.value}))} placeholder="https://... (URL de imagen)" style={{ width:"100%", boxSizing:"border-box", padding:"8px 12px", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:10, color:"#fff", fontSize:12, fontFamily:F, outline:"none", marginTop:6 }}/>
-      </div>
+      <ProductImageUploader form={form} setForm={setForm}/>
       {form.amounts && form.amounts.split(",").map(a=>a.trim()).filter(a=>a.length>0).map(a => (
         <div key={`usdt_${a}`} style={{ marginBottom:10 }}>
           <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 4px" }}>Precio USDT para <span style={{ color:"#F3BA2F" }}>{a}</span></p>
@@ -2567,7 +2820,497 @@ function AdminProducts() {
   );
 }
 
-/* ── Admin: Settings Tab ── */
+function GameFormPanel({ form, setForm, editing, saving, saveGame, onCancel }) {
+  return (
+    <div style={{ background:"rgba(123,111,255,0.08)", border:"1px solid rgba(123,111,255,0.25)", borderRadius:16, padding:"16px", marginBottom:16 }}>
+      <p style={{ color:"#7B6FFF", fontSize:11, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 12px" }}>{editing?"EDITAR JUEGO":"NUEVO JUEGO"}</p>
+      {[
+        {label:"Nombre del juego", key:"name", placeholder:"Cyberpunk 2077"},
+        {label:"Tag (opcional)", key:"tag", placeholder:"Nuevo, Oferta, Hot, Popular"},
+      ].map(f=>(
+        <div key={f.key} style={{ marginBottom:10 }}>
+          <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 4px" }}>{f.label}</p>
+          <input value={form[f.key]||""} onChange={e=>setForm(p=>({...p,[f.key]:e.target.value}))} placeholder={f.placeholder} style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:"#fff", fontSize:13, fontFamily:F, outline:"none" }}/>
+        </div>
+      ))}
+      <div style={{ marginBottom:10 }}>
+        <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 4px" }}>Precio USDT <span style={{ color:"rgba(255,255,255,0.3)" }}>(precio fijo del juego)</span></p>
+        <div style={{ position:"relative" }}>
+          <span style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"#F3BA2F", fontSize:13, fontWeight:700, fontFamily:F }}>$</span>
+          <input
+            value={form.game_price_usdt||""}
+            onChange={e=>setForm(p=>({...p, game_price_usdt:e.target.value, amounts:["price"], usdt_prices:{ price: e.target.value }}))}
+            placeholder="Ej: 19.99"
+            type="number"
+            step="0.01"
+            style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px 10px 28px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(243,186,47,0.4)", borderRadius:10, color:"#fff", fontSize:14, fontFamily:F, outline:"none", fontWeight:700 }}
+          />
+        </div>
+        <p style={{ color:"rgba(255,255,255,0.3)", fontSize:9, fontFamily:F, margin:"4px 0 0" }}>Se convierte automáticamente a Bs. según la tasa del día</p>
+      </div>
+      <div style={{ marginBottom:10 }}>
+        <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 4px" }}>Descripción <span style={{ color:"rgba(255,255,255,0.3)" }}>(opcional)</span></p>
+        <textarea value={form.description||""} onChange={e=>setForm(p=>({...p,description:e.target.value}))} placeholder="Descripción del juego, plataformas compatibles..." rows={3} style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:"#fff", fontSize:13, fontFamily:F, outline:"none", resize:"vertical" }}/>
+      </div>
+      <ProductImageUploader form={form} setForm={setForm}/>
+      <div style={{ marginBottom:10 }}>
+        <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 6px" }}>Plataforma</p>
+        <div style={{ display:"flex", gap:8 }}>
+          {["Xbox","Steam"].map(c => {
+            const cats = Array.isArray(form.category) ? form.category : [form.category].filter(Boolean);
+            const selected = cats.includes(c);
+            return (
+              <button key={c} type="button" onClick={()=>{ const cur=Array.isArray(form.category)?form.category:[form.category].filter(Boolean); if(selected){setForm(p=>({...p,category:cur.filter(x=>x!==c)}));}else{setForm(p=>({...p,category:[...cur,c]}));} }} style={{ flex:1, padding:"9px 0", background:selected?"rgba(123,111,255,0.25)":"rgba(255,255,255,0.05)", border:`1px solid ${selected?"rgba(123,111,255,0.6)":"rgba(255,255,255,0.12)"}`, borderRadius:10, color:selected?"#A89FFF":"#F0EDE8", fontSize:12, fontWeight:selected?700:400, fontFamily:F, cursor:"pointer" }}>{c}</button>
+            );
+          })}
+        </div>
+      </div>
+      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
+        <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:0 }}>Activo</p>
+        <button onClick={()=>setForm(p=>({...p,active:!p.active}))} style={{ width:40, height:22, borderRadius:11, background:form.active?"#7B6FFF":"rgba(255,255,255,0.12)", border:"none", cursor:"pointer", position:"relative", transition:"background 0.2s" }}>
+          <span style={{ position:"absolute", top:3, left:form.active?20:3, width:16, height:16, borderRadius:"50%", background:"#fff", transition:"left 0.2s" }}/>
+        </button>
+      </div>
+      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
+        <div style={{ flex:1 }}>
+          <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:0 }}>Entrega manual</p>
+          <p style={{ color:"rgba(255,255,255,0.3)", fontSize:9, fontFamily:F, margin:"2px 0 0" }}>El cliente verifica por WhatsApp</p>
+        </div>
+        <button onClick={()=>setForm(p=>({...p,manual_delivery:!p.manual_delivery}))} style={{ width:40, height:22, borderRadius:11, background:form.manual_delivery?"#25D366":"rgba(255,255,255,0.12)", border:"none", cursor:"pointer", position:"relative", transition:"background 0.2s", flexShrink:0 }}>
+          <span style={{ position:"absolute", top:3, left:form.manual_delivery?20:3, width:16, height:16, borderRadius:"50%", background:"#fff", transition:"left 0.2s" }}/>
+        </button>
+      </div>
+      <div style={{ marginBottom:14 }}>
+        <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 8px" }}>PRECIO REFERENCIA DEL PROVEEDOR</p>
+        <div style={{ display:"flex", gap:8, marginBottom:10 }}>
+          {["Microsoft Store","Eneba"].map(src => {
+            const selected = (form.price_source||"") === src;
+            return (
+              <button key={src} type="button" onClick={()=>setForm(p=>({...p, price_source: selected ? "" : src}))}
+                style={{ flex:1, padding:"9px 0", background:selected?"rgba(0,200,150,0.18)":"rgba(255,255,255,0.05)", border:`1px solid ${selected?"rgba(0,200,150,0.5)":"rgba(255,255,255,0.12)"}`, borderRadius:10, color:selected?"#00C896":"#F0EDE8", fontSize:11, fontWeight:selected?700:400, fontFamily:F, cursor:"pointer", transition:"all 0.2s" }}>
+                {src}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ position:"relative" }}>
+          <span style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"rgba(0,200,150,0.8)", fontSize:12, fontWeight:700, fontFamily:F }}>$</span>
+          <input
+            value={form.purchase_price||""}
+            onChange={e=>setForm(p=>({...p, purchase_price:e.target.value}))}
+            placeholder="Precio al que compré (referencia interna)"
+            type="number"
+            step="0.01"
+            style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px 10px 28px", background:"rgba(0,200,150,0.06)", border:"1px solid rgba(0,200,150,0.25)", borderRadius:10, color:"#fff", fontSize:13, fontFamily:F, outline:"none" }}
+          />
+        </div>
+        <p style={{ color:"rgba(255,255,255,0.25)", fontSize:9, fontFamily:F, margin:"4px 0 0" }}>Solo visible en el admin — no se muestra al cliente</p>
+      </div>
+      <div style={{ display:"flex", gap:8 }}>
+        <button onClick={onCancel} style={{ flex:1, padding:"10px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:"#F0EDE8", fontSize:12, fontFamily:F, cursor:"pointer" }}>Cancelar</button>
+        <button disabled={saving||!form.name||!form.game_price_usdt} onClick={saveGame} style={{ flex:2, padding:"10px", background:(!saving&&form.name&&form.game_price_usdt)?"linear-gradient(135deg,#7B6FFF,#4F8EFF)":"rgba(255,255,255,0.05)", border:"none", borderRadius:10, color:(!saving&&form.name&&form.game_price_usdt)?"#fff":"rgba(255,255,255,0.3)", fontSize:12, fontWeight:800, fontFamily:F, cursor:(!saving&&form.name&&form.game_price_usdt)?"pointer":"not-allowed" }}>
+          {saving?"Guardando...":"💾 Guardar"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Admin: Ofertas Panel ── */
+function AdminOfertasPanel({ games, tasa, onClose }) {
+  const [ofertas, setOfertas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ game_id:"", sale_price:"", expires_at:"" });
+  const [gameSearch, setGameSearch] = useState("");
+
+  const load = async () => {
+    setLoading(true);
+    const rows = await sb.getAll("game_ofertas");
+    if (Array.isArray(rows)) {
+      const now = new Date();
+      for (const o of rows) {
+        if (o.active && o.expires_at && new Date(o.expires_at) < now) {
+          await sb.delete("game_ofertas", o.id);
+          const game = games.find(g => g.id === o.game_id);
+          if (game && o.original_prices) {
+            await sb.update("games", o.game_id, { usdt_prices: o.original_prices, tag: o.original_tag || null });
+            setGlobalGames(GLOBAL_GAMES.map(g => g.id === o.game_id ? { ...g, usdt_prices: o.original_prices, tag: o.original_tag || null } : g));
+          }
+        }
+      }
+      setOfertas(await sb.getAll("game_ofertas").then(r => Array.isArray(r) ? r : []));
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const selectedGame = games.find(g => g.id === form.game_id);
+  const currentPrice = selectedGame?.usdt_prices ? Object.values(selectedGame.usdt_prices)[0] : null;
+  const salePrice = parseFloat(form.sale_price);
+  const discount = currentPrice && !isNaN(salePrice) && salePrice < currentPrice
+    ? Math.round((1 - salePrice / currentPrice) * 100) : null;
+
+  const filteredGames = games.filter(g =>
+    g.active !== false && (!gameSearch || g.name.toLowerCase().includes(gameSearch.toLowerCase()))
+  );
+
+  const saveOferta = async () => {
+    if (!form.game_id || !form.sale_price || !form.expires_at) return;
+    setSaving(true);
+    const game = games.find(g => g.id === form.game_id);
+    if (!game) { setSaving(false); return; }
+    const original_prices = game.usdt_prices || { price: 0 };
+    const original_tag = game.tag || null;
+    const newPrices = { price: parseFloat(form.sale_price) };
+    await sb.insert("game_ofertas", {
+      game_id: form.game_id,
+      game_name: game.name,
+      sale_price: parseFloat(form.sale_price),
+      original_prices,
+      original_tag,
+      expires_at: new Date(form.expires_at + "T23:59:59").toISOString(),
+      active: true,
+    });
+    await sb.update("games", form.game_id, { usdt_prices: newPrices, tag: "Oferta" });
+    setGlobalGames(GLOBAL_GAMES.map(g => g.id === form.game_id ? { ...g, usdt_prices: newPrices, tag: "Oferta" } : g));
+    setSaving(false);
+    setShowForm(false);
+    setForm({ game_id:"", sale_price:"", expires_at:"" });
+    setGameSearch("");
+    load();
+  };
+
+  const cancelOferta = async (o) => {
+    if (!window.confirm(`¿Cancelar oferta de ${o.game_name}?`)) return;
+    await sb.delete("game_ofertas", o.id);
+    const game = games.find(g => g.id === o.game_id);
+    if (game && o.original_prices) {
+      await sb.update("games", o.game_id, { usdt_prices: o.original_prices, tag: o.original_tag || null });
+      setGlobalGames(GLOBAL_GAMES.map(g => g.id === o.game_id ? { ...g, usdt_prices: o.original_prices, tag: o.original_tag || null } : g));
+    }
+    load();
+  };
+
+  const activeOfertas = ofertas.filter(o => o.active);
+  const pastOfertas = ofertas.filter(o => !o.active);
+  const today = new Date().toISOString().slice(0,10);
+
+  return (
+    <div style={{ position:"fixed", inset:0, zIndex:600, background:"rgba(0,0,0,0.7)", backdropFilter:"blur(6px)", display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+      <div style={{ width:"100%", maxWidth:480, background:"#0E0E1C", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"24px 24px 0 0", maxHeight:"88vh", overflowY:"auto", padding:"0 0 32px" }}>
+        <div style={{ display:"flex", justifyContent:"center", padding:"12px 0 4px" }}>
+          <div style={{ width:36, height:4, borderRadius:2, background:"rgba(255,255,255,0.2)" }}/>
+        </div>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 20px 16px" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <span style={{ fontSize:18 }}>🏷️</span>
+            <p style={{ color:"#fff", fontSize:15, fontWeight:800, fontFamily:F, margin:0 }}>Ofertas de Juegos</p>
+          </div>
+          <button onClick={onClose} style={{ background:"rgba(255,255,255,0.08)", border:"none", borderRadius:8, color:"#F0EDE8", fontSize:18, cursor:"pointer", width:30, height:30, display:"flex", alignItems:"center", justifyContent:"center" }}>×</button>
+        </div>
+        <div style={{ height:1, background:"rgba(255,255,255,0.07)", marginBottom:16 }}/>
+
+        <div style={{ padding:"0 16px" }}>
+          {showForm ? (
+            <div style={{ background:"rgba(255,165,0,0.08)", border:"1px solid rgba(255,165,0,0.3)", borderRadius:16, padding:"16px", marginBottom:16 }}>
+              <p style={{ color:"#F3BA2F", fontSize:11, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 14px" }}>NUEVA OFERTA</p>
+
+              {/* Buscador de juegos */}
+              <div style={{ marginBottom:10 }}>
+                <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 4px" }}>Buscar juego</p>
+                <div style={{ background:"rgba(255,255,255,0.06)", border:`1px solid ${gameSearch?"rgba(243,186,47,0.4)":"rgba(255,255,255,0.12)"}`, borderRadius:10, padding:"10px 12px", display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0 }}>
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <input value={gameSearch} onChange={e=>{ setGameSearch(e.target.value); setForm(p=>({...p,game_id:""})); }}
+                    placeholder="Escribe para buscar..." style={{ background:"none", border:"none", outline:"none", color:"#fff", fontSize:13, fontFamily:F, flex:1 }}/>
+                  {gameSearch && <button onClick={()=>setGameSearch("")} style={{ background:"none", border:"none", color:"rgba(255,255,255,0.4)", cursor:"pointer", fontSize:14, padding:0 }}>✕</button>}
+                </div>
+                {/* Lista de resultados */}
+                {gameSearch && (
+                  <div style={{ background:"rgba(0,0,0,0.4)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:10, maxHeight:160, overflowY:"auto" }}>
+                    {filteredGames.length === 0
+                      ? <p style={{ color:"rgba(255,255,255,0.3)", fontSize:12, fontFamily:F, padding:"12px", margin:0, textAlign:"center" }}>Sin resultados</p>
+                      : filteredGames.map(g => (
+                        <div key={g.id} onClick={()=>{ setForm(p=>({...p,game_id:g.id})); setGameSearch(g.name); }}
+                          style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", cursor:"pointer", background:form.game_id===g.id?"rgba(243,186,47,0.12)":"transparent", borderBottom:"1px solid rgba(255,255,255,0.05)" }}>
+                          <img src={getImg(g)} style={{ width:36, height:26, objectFit:"cover", borderRadius:5, flexShrink:0 }}/>
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <p style={{ color:"#fff", fontSize:12, fontWeight:700, fontFamily:F, margin:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{g.name}</p>
+                            <p style={{ color:"rgba(255,255,255,0.4)", fontSize:10, fontFamily:F, margin:0 }}>
+                              {g.usdt_prices ? `$${Object.values(g.usdt_prices)[0]} USDT` : "Sin precio"}
+                            </p>
+                          </div>
+                          {form.game_id===g.id && <span style={{ color:"#F3BA2F", fontSize:14 }}>✓</span>}
+                        </div>
+                      ))
+                    }
+                  </div>
+                )}
+              </div>
+
+              {/* Precio actual */}
+              {selectedGame && currentPrice && (
+                <div style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:10, padding:"10px 12px", marginBottom:10, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <p style={{ color:"rgba(255,255,255,0.5)", fontSize:11, fontFamily:F, margin:0 }}>Precio actual</p>
+                  <div style={{ textAlign:"right" }}>
+                    <p style={{ color:"#fff", fontSize:13, fontWeight:700, fontFamily:F, margin:0 }}>${currentPrice} USDT</p>
+                    <p style={{ color:"rgba(255,255,255,0.4)", fontSize:10, fontFamily:F, margin:0 }}>{fmtBs(null, tasa, currentPrice)}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Precio de oferta */}
+              <div style={{ marginBottom:10 }}>
+                <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 4px" }}>Precio de oferta <span style={{ color:"#F3BA2F" }}>(USDT)</span></p>
+                <div style={{ position:"relative" }}>
+                  <span style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"#F3BA2F", fontSize:13, fontWeight:700, fontFamily:F }}>$</span>
+                  <input value={form.sale_price} onChange={e=>setForm(p=>({...p,sale_price:e.target.value}))}
+                    placeholder="Ej: 19.99" type="number" step="0.01"
+                    style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px 10px 28px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(243,186,47,0.4)", borderRadius:10, color:"#fff", fontSize:14, fontFamily:F, outline:"none", fontWeight:700 }}/>
+                </div>
+                {discount !== null && (
+                  <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:6 }}>
+                    <span style={{ background:"rgba(0,200,150,0.2)", border:"1px solid rgba(0,200,150,0.4)", borderRadius:6, padding:"3px 8px", color:"#00C896", fontSize:11, fontFamily:F, fontWeight:700 }}>-{discount}% descuento</span>
+                    <p style={{ color:"rgba(255,255,255,0.4)", fontSize:10, fontFamily:F, margin:0 }}>
+                      {fmtBs(null, tasa, currentPrice)} → <span style={{ color:"#00C896" }}>{fmtBs(null, tasa, salePrice)}</span>
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Fecha de expiración */}
+              <div style={{ marginBottom:14 }}>
+                <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:"0 0 4px" }}>Fecha de expiración</p>
+                <input value={form.expires_at} onChange={e=>setForm(p=>({...p,expires_at:e.target.value}))}
+                  type="date" min={today}
+                  style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:"#fff", fontSize:13, fontFamily:F, outline:"none" }}/>
+                <p style={{ color:"rgba(255,255,255,0.25)", fontSize:9, fontFamily:F, margin:"4px 0 0" }}>Se desactiva automáticamente a las 11:59 PM de esa fecha</p>
+              </div>
+
+              <div style={{ display:"flex", gap:8 }}>
+                <button onClick={()=>{ setShowForm(false); setForm({ game_id:"", sale_price:"", expires_at:"" }); setGameSearch(""); }}
+                  style={{ flex:1, padding:"10px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:"#F0EDE8", fontSize:12, fontFamily:F, cursor:"pointer" }}>Cancelar</button>
+                <button disabled={saving||!form.game_id||!form.sale_price||!form.expires_at} onClick={saveOferta}
+                  style={{ flex:2, padding:"10px", background:(!saving&&form.game_id&&form.sale_price&&form.expires_at)?"linear-gradient(135deg,#F3BA2F,#E5A800)":"rgba(255,255,255,0.05)", border:"none", borderRadius:10, color:(!saving&&form.game_id&&form.sale_price&&form.expires_at)?"#000":"rgba(255,255,255,0.3)", fontSize:12, fontWeight:800, fontFamily:F, cursor:"pointer" }}>
+                  {saving?"Guardando...":"🏷️ Activar oferta"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={()=>setShowForm(true)} style={{ width:"100%", padding:"12px", background:"linear-gradient(135deg,#F3BA2F,#E5A800)", border:"none", borderRadius:12, color:"#000", fontSize:13, fontWeight:800, fontFamily:F, cursor:"pointer", marginBottom:16 }}>
+              + Nueva oferta
+            </button>
+          )}
+
+          {loading ? (
+            <p style={{ color:"rgba(255,255,255,0.4)", textAlign:"center", padding:"20px 0", fontFamily:F }}>Cargando...</p>
+          ) : (
+            <>
+              {activeOfertas.length > 0 && (
+                <>
+                  <p style={{ color:"#F3BA2F", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 8px" }}>🔥 ACTIVAS ({activeOfertas.length})</p>
+                  {activeOfertas.map(o => {
+                    const game = games.find(g=>g.id===o.game_id);
+                    const orig = o.original_prices ? Object.values(o.original_prices)[0] : null;
+                    const expDate = new Date(o.expires_at);
+                    const daysLeft = Math.ceil((expDate - new Date()) / (1000*60*60*24));
+                    return (
+                      <div key={o.id} style={{ background:"rgba(243,186,47,0.08)", border:"1px solid rgba(243,186,47,0.25)", borderRadius:14, padding:"12px 14px", marginBottom:8 }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
+                          {game && <img src={getImg(game)} style={{ width:40, height:30, objectFit:"cover", borderRadius:6, flexShrink:0 }}/>}
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <p style={{ color:"#fff", fontSize:13, fontWeight:700, fontFamily:F, margin:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{o.game_name}</p>
+                            <p style={{ color:"rgba(255,255,255,0.4)", fontSize:10, fontFamily:F, margin:0 }}>
+                              Vence en <span style={{ color: daysLeft <= 2 ? "#FF4D6A" : "#F3BA2F", fontWeight:700 }}>{daysLeft} día{daysLeft!==1?"s":""}</span> · {expDate.toLocaleDateString("es-VE")}
+                            </p>
+                          </div>
+                        </div>
+                        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                            {orig && <p style={{ color:"rgba(255,255,255,0.35)", fontSize:11, fontFamily:F, margin:0, textDecoration:"line-through" }}>${orig} USDT</p>}
+                            <p style={{ color:"#F3BA2F", fontSize:14, fontWeight:800, fontFamily:F, margin:0 }}>${o.sale_price} USDT</p>
+                            {orig && <span style={{ background:"rgba(0,200,150,0.2)", border:"1px solid rgba(0,200,150,0.4)", borderRadius:6, padding:"2px 6px", color:"#00C896", fontSize:9, fontFamily:F, fontWeight:700 }}>-{Math.round((1-o.sale_price/orig)*100)}%</span>}
+                          </div>
+                          <button onClick={()=>cancelOferta(o)} style={{ padding:"5px 10px", background:"rgba(255,77,106,0.12)", border:"1px solid rgba(255,77,106,0.3)", borderRadius:8, color:"#FF4D6A", fontSize:11, fontFamily:F, cursor:"pointer" }}>Cancelar</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+              {activeOfertas.length === 0 && !showForm && (
+                <p style={{ color:"rgba(255,255,255,0.3)", fontSize:13, fontFamily:F, textAlign:"center", padding:"20px 0" }}>Sin ofertas activas</p>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Admin: Games Tab ── */
+function AdminGames() {
+  const games = useGames();
+  const tasa = useTasa();
+  const [editing, setEditing] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({});
+  const [showAdd, setShowAdd] = useState(false);
+  const [showOfertas, setShowOfertas] = useState(false);
+
+  const startEdit = (p) => {
+    setEditing(p);
+    setShowAdd(false);
+    const cats = Array.isArray(p.category) ? p.category : [p.category].filter(Boolean);
+    const priceVal = p.usdt_prices ? Object.values(p.usdt_prices)[0] : "";
+    setForm({ _id: p.id, _original_name: p.name, name:p.name, category:cats, tag:p.tag||"", game_price_usdt:String(priceVal||""), amounts:["price"], usdt_prices:{ price: priceVal }, active:p.active!==false, img_url:p.img_url||"", description:p.description||"", manual_delivery:p.manual_delivery||false, price_source:p.price_source||"", purchase_price:p.purchase_price ? String(p.purchase_price) : "" });
+  };
+
+  const startAdd = () => {
+    setEditing(null);
+    setShowAdd(true);
+    setForm({ name:"", category:[], tag:"", game_price_usdt:"", amounts:["price"], usdt_prices:{}, active:true, img_url:"", description:"", manual_delivery:false });
+  };
+
+  const saveGame = async () => {
+    setSaving(true);
+    const priceUsdt = parseFloat(form.game_price_usdt);
+    const usdtPrices = !isNaN(priceUsdt) ? { price: priceUsdt } : null;
+    const catsArr = Array.isArray(form.category) ? form.category : [form.category].filter(Boolean);
+    const payload = { name:form.name, category:catsArr, tag:form.tag||null, amounts:["price"], usdt_prices:usdtPrices, active:form.active, img_url:form.img_url||null, original_name:form._original_name||null, description:form.description||null, manual_delivery:form.manual_delivery||false, price_source:form.price_source||null, purchase_price:form.purchase_price ? parseFloat(form.purchase_price) : null };
+    let result;
+    const gameId = form._id || (editing && editing.id);
+    if (gameId) {
+      result = await sb.update("games", gameId, payload);
+    } else {
+      result = await sb.insert("games", payload);
+    }
+    if (result && (result.code || result.error)) {
+      alert("Error: " + (result.message || result.code || result.error));
+      setSaving(false);
+      return;
+    }
+    if (Array.isArray(result) && result.length > 0) {
+      const saved = result[0];
+      const exists = GLOBAL_GAMES.find(p => p.id === saved.id);
+      if (exists) setGlobalGames(GLOBAL_GAMES.map(p => p.id === saved.id ? saved : p));
+      else setGlobalGames([...GLOBAL_GAMES, saved]);
+    }
+    setSaving(false); setEditing(null); setShowAdd(false);
+  };
+
+  const toggleActive = async (p) => {
+    const action = p.active === false ? "activar" : "ocultar";
+    if (!window.confirm(`¿Deseas ${action} "${p.name}"?`)) return;
+    const result = await sb.update("games", p.id, { active:!p.active });
+    if (Array.isArray(result) && result.length > 0) {
+      const saved = result[0];
+      setGlobalGames(GLOBAL_GAMES.map(x => x.id === saved.id ? saved : x));
+    } else {
+      setGlobalGames(GLOBAL_GAMES.map(x => x.id === p.id ? {...x, active:!p.active} : x));
+    }
+  };
+
+  const deleteGame = async (p) => {
+    if (!window.confirm(`¿Eliminar ${p.name}?`)) return;
+    await sb.delete("games", p.id);
+    setGlobalGames(GLOBAL_GAMES.filter(x => x.id !== p.id));
+  };
+
+  const [search, setSearch] = useState("");
+
+  const filteredGames = games.filter(p =>
+    !search || p.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const downloadExcel = () => {
+    const rows = [
+      ["Nombre", "Plataforma", "Proveedor", "Precio Compra (USD)", "Precio App (USDT)", "Precio App (Bs)", "Estado"],
+      ...games.map(p => {
+        const plataforma = Array.isArray(p.category) ? p.category.join(" / ") : (p.category || "—");
+        const proveedor = p.price_source || "—";
+        const precioCompra = p.purchase_price != null ? p.purchase_price : "—";
+        const precioUsdt = p.usdt_prices ? Object.values(p.usdt_prices)[0] : "—";
+        const precioBs = precioUsdt && precioUsdt !== "—" ? parseFloat((precioUsdt * tasa).toFixed(2)) : "—";
+        const estado = p.active === false ? "Oculto" : "Activo";
+        return [p.name, plataforma, proveedor, precioCompra, precioUsdt, precioBs, estado];
+      })
+    ];
+    // Build CSV with BOM for Excel UTF-8
+    const bom = "\uFEFF";
+    const csv = bom + rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type:"text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `juegos_startgame_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div style={{ padding:"16px" }}>
+      {showOfertas && <AdminOfertasPanel games={games} tasa={tasa} onClose={()=>setShowOfertas(false)}/>}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+        <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, letterSpacing:"0.1em", fontWeight:700, margin:0 }}>🎮 JUEGOS ({games.length})</p>
+        <div style={{ display:"flex", gap:8 }}>
+          <button onClick={()=>setShowOfertas(true)} style={{ background:"rgba(243,186,47,0.12)", border:"1px solid rgba(243,186,47,0.35)", borderRadius:10, color:"#F3BA2F", fontSize:12, fontFamily:F, fontWeight:700, padding:"7px 14px", cursor:"pointer" }}>🏷️ Ofertas</button>
+          <button onClick={downloadExcel} style={{ background:"rgba(0,200,150,0.12)", border:"1px solid rgba(0,200,150,0.35)", borderRadius:10, color:"#00C896", fontSize:12, fontFamily:F, fontWeight:700, padding:"7px 14px", cursor:"pointer" }}>📥 Excel</button>
+          <button onClick={startAdd} style={{ background:"rgba(123,111,255,0.15)", border:"1px solid rgba(123,111,255,0.35)", borderRadius:10, color:"#7B6FFF", fontSize:12, fontFamily:F, fontWeight:700, padding:"7px 14px", cursor:"pointer" }}>+ Nuevo</button>
+        </div>
+      </div>
+      <div style={{ background:"rgba(255,255,255,0.05)", borderRadius:12, border:"1px solid rgba(255,255,255,0.10)", padding:"10px 14px", display:"flex", alignItems:"center", gap:10, marginBottom:14, ...(search?{border:"1px solid rgba(123,111,255,0.4)"}:{}) }}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0 }}>
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar juego..." style={{ background:"none", border:"none", outline:"none", color:"#fff", fontSize:13, fontFamily:F, flex:1 }}/>
+        {search && <button onClick={()=>setSearch("")} style={{ background:"rgba(255,255,255,0.08)", border:"none", borderRadius:6, color:"#F0EDE8", cursor:"pointer", width:20, height:20, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, flexShrink:0 }}>✕</button>}
+      </div>
+      {search && <p style={{ color:"rgba(255,255,255,0.3)", fontSize:10, fontFamily:F, margin:"0 0 10px" }}>{filteredGames.length} resultado{filteredGames.length!==1?"s":""}</p>}
+      {showAdd && <GameFormPanel form={form} setForm={setForm} editing={editing} saving={saving} saveGame={saveGame} onCancel={()=>{ setEditing(null); setShowAdd(false); }}/>}
+      {filteredGames.map(p=>(
+        <div key={p.id}>
+          {editing?.id===p.id && <GameFormPanel form={form} setForm={setForm} editing={editing} saving={saving} saveGame={saveGame} onCancel={()=>{ setEditing(null); setShowAdd(false); }}/>}
+          <div style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${p.active===false?"rgba(255,77,106,0.2)":"rgba(255,255,255,0.07)"}`, borderRadius:14, padding:"12px", marginBottom:8, opacity:p.active===false?0.6:1 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+              <img src={getImg(p)} style={{ width:50, height:36, objectFit:"cover", borderRadius:8, flexShrink:0 }}/>
+              <div style={{ flex:1, minWidth:0 }}>
+                <p style={{ color:"#fff", fontSize:13, fontWeight:700, fontFamily:F, margin:"0 0 2px", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{p.name}</p>
+                <p style={{ color:"#F0EDE8", fontSize:10, fontFamily:F, margin:0 }}>
+                  {(p.amounts||[]).join(", ")} · {Array.isArray(p.category)?p.category.join(", "):p.category}
+                  {p.tag && <span style={{ color:"#F3BA2F", marginLeft:4 }}>· {p.tag}</span>}
+                </p>
+                <p style={{ color:"rgba(255,255,255,0.35)", fontSize:10, fontFamily:F, margin:"1px 0 0" }}>
+                  {(() => {
+                    const a = (p.amounts||[])[0];
+                    const usdt = getUsdt(p, a);
+                    const num = parseFloat(String(a));
+                    if (usdt) return `desde ${fmtBs(null, tasa, parseFloat(usdt))}`;
+                    if (!isNaN(num)) return `desde ${fmtBs(num, tasa)}`;
+                    return `desde ${a||""}`;
+                  })()}
+                  {p.usdt_prices && Object.keys(p.usdt_prices).length>0 && <span style={{ color:"#F3BA2F", marginLeft:6 }}>· USDT ✓</span>}
+                </p>
+              </div>
+              <div style={{ display:"flex", flexDirection:"column", gap:5, alignItems:"flex-end" }}>
+                <button onClick={()=>startEdit(p)} style={{ background:"rgba(255,255,255,0.08)", border:"none", borderRadius:7, color:"#F0EDE8", fontSize:11, fontFamily:F, padding:"4px 10px", cursor:"pointer" }}>✏️</button>
+                <button onClick={()=>toggleActive(p)} style={{ background:p.active===false?"rgba(0,200,150,0.12)":"rgba(255,77,106,0.12)", border:"none", borderRadius:7, color:p.active===false?"#00C896":"#FF4D6A", fontSize:10, fontFamily:F, padding:"4px 8px", cursor:"pointer" }}>{p.active===false?"Activar":"Ocultar"}</button>
+                <button onClick={()=>deleteGame(p)} style={{ background:"rgba(255,77,106,0.08)", border:"none", borderRadius:7, color:"#FF4D6A", fontSize:11, padding:"4px 8px", cursor:"pointer" }}>🗑</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
 function BannerEditor() {
   const [b, setB] = useState({ badge:"NEXUS IA DISPONIBLE", title:"Tu agente experto en videojuegos", subtitle:"Pregúntale cualquier cosa sobre gaming", btn:"HABLAR CON NEXUS →", visible:true });
   const [saving, setSaving] = useState(false);
@@ -2897,7 +3640,7 @@ function AdminPosts() {
       // Subir a imgbb (gratis, sin límite de bandwidth)
       const formData = new FormData();
       formData.append("image", base64);
-      const r = await fetch("https://api.imgbb.com/1/upload?key=8aaeda2ee6569a4e928c4c627caeadf4", {
+      const r = await fetch(`https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_IMGBB_KEY||"8aaeda2ee6569a4e928c4c627caeadf4"}`, {
         method: "POST",
         body: formData,
       });
@@ -3153,47 +3896,196 @@ function AdminNotifs() {
 
 
 /* ─── ADMIN LOGIN ─── */
-function AdminLogin({ onSuccess }) {
-  const [pass, setPass] = useState("");
-  const [error, setError] = useState(false);
-  const [loading, setLoading] = useState(false);
+const ADMIN_2FA_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || "gil751630@gmail.com";
 
-  const try_ = async () => {
+async function send2FACode(code) {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/send-order-email`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${SUPABASE_KEY}`,
+    },
+    body: JSON.stringify({
+      customer_email: ADMIN_2FA_EMAIL,
+      order_id: "2FA-ADMIN",
+      gift_code: null,
+      items: [],
+      total: 0,
+      total_bs: 0,
+      payment_method: "admin",
+      _2fa_code: code,
+      _2fa_mode: true,
+    }),
+  });
+  return res.ok;
+}
+
+function AdminLogin({ onSuccess }) {
+  const [step, setStep] = useState("password");
+  const [pass, setPass] = useState("");
+  const [code, setCode] = useState("");
+  const [generatedCode, setGeneratedCode] = useState("");
+  const [codeExpiry, setCodeExpiry] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+
+  const CACHE_KEY = "sg_2fa_cache";
+  const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 horas
+
+  const getIP = async () => {
+    try {
+      const r = await fetch("https://api.ipify.org?format=json");
+      const d = await r.json();
+      return d.ip || "unknown";
+    } catch { return "unknown"; }
+  };
+
+  const is2FAValid = async () => {
+    try {
+      const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+      if (!cached) return false;
+      if (Date.now() - cached.timestamp > CACHE_TTL) return false;
+      const ip = await getIP();
+      return cached.ip === ip;
+    } catch { return false; }
+  };
+
+  const save2FACache = async () => {
+    try {
+      const ip = await getIP();
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ ip, timestamp: Date.now() }));
+    } catch {}
+  };
+
+  // Countdown timer
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const t = setTimeout(() => setCountdown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [countdown]);
+
+  const checkPassword = async () => {
     if (!pass.trim()) return;
     setLoading(true);
+    setError("");
     try {
       const stored = await sb.getSetting("admin_password");
       if (stored && pass === stored) {
-        onSuccess();
+        // Verificar si ya pasó 2FA desde esta IP en las últimas 24h
+        const valid = await is2FAValid();
+        if (valid) {
+          onSuccess();
+          setLoading(false);
+          return;
+        }
+        // Generar código de 6 dígitos
+        const newCode = String(Math.floor(100000 + Math.random() * 900000));
+        setGeneratedCode(newCode);
+        setCodeExpiry(Date.now() + 5 * 60 * 1000);
+        try {
+          const sent = await send2FACode(newCode);
+          if (sent) {
+            setStep("code");
+            setSent(true);
+            setCountdown(60);
+          } else {
+            onSuccess();
+          }
+        } catch {
+          onSuccess();
+        }
       } else {
-        setError(true);
-        setTimeout(() => setError(false), 1500);
+        setError("Contraseña incorrecta");
+        setTimeout(() => setError(""), 1500);
       }
     } catch {
-      setError(true);
-      setTimeout(() => setError(false), 1500);
+      setError("Error al verificar");
     }
     setLoading(false);
   };
 
+  const checkCode = () => {
+    if (!code.trim()) return;
+    if (Date.now() > codeExpiry) {
+      setError("Código expirado. Solicita uno nuevo.");
+      return;
+    }
+    if (code.trim() === generatedCode) {
+      save2FACache(); // Guardar IP + timestamp
+      onSuccess();
+    } else {
+      setError("Código incorrecto");
+      setTimeout(() => setError(""), 1500);
+    }
+  };
+
+  const resendCode = async () => {
+    if (countdown > 0) return;
+    setLoading(true);
+    const newCode = String(Math.floor(100000 + Math.random() * 900000));
+    setGeneratedCode(newCode);
+    setCodeExpiry(Date.now() + 5 * 60 * 1000);
+    await send2FACode(newCode);
+    setLoading(false);
+    setCountdown(60);
+    setCode("");
+    setError("");
+  };
+
   return (
     <div style={{ minHeight:"100vh", background:"#0A0A14", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"32px 24px" }}>
-      <div style={{ width:56, height:56, borderRadius:16, background:"rgba(123,111,255,0.15)", border:"1px solid rgba(123,111,255,0.3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, marginBottom:20 }}>🔐</div>
+      <div style={{ width:56, height:56, borderRadius:16, background:"rgba(123,111,255,0.15)", border:"1px solid rgba(123,111,255,0.3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, marginBottom:20 }}>
+        {step === "password" ? "🔐" : "📧"}
+      </div>
       <h2 style={{ color:"#fff", fontSize:20, fontWeight:800, fontFamily:F, margin:"0 0 6px" }}>Panel Admin</h2>
-      <p style={{ color:"#F0EDE8", fontSize:13, fontFamily:F, margin:"0 0 28px" }}>Start Game</p>
+      <p style={{ color:"#F0EDE8", fontSize:13, fontFamily:F, margin:"0 0 28px" }}>
+        {step === "password" ? "Start Game" : `Código enviado a ${ADMIN_2FA_EMAIL.slice(0,4)}***@gmail.com`}
+      </p>
+
       <div style={{ width:"100%", maxWidth:300 }}>
-        <input
-          type="password"
-          value={pass}
-          onChange={e=>setPass(e.target.value)}
-          onKeyDown={e=>e.key==="Enter"&&try_()}
-          placeholder="Contraseña de acceso"
-          style={{ width:"100%", boxSizing:"border-box", padding:"14px 16px", background:error?"rgba(255,77,106,0.10)":"rgba(255,255,255,0.07)", border:`1px solid ${error?"rgba(255,77,106,0.5)":"rgba(255,255,255,0.15)"}`, borderRadius:12, color:"#fff", fontSize:14, fontFamily:F, outline:"none", marginBottom:12, transition:"all 0.2s" }}
-        />
-        <button onClick={try_} disabled={loading} style={{ width:"100%", padding:"14px", background:"linear-gradient(135deg,#7B6FFF,#4F8EFF)", border:"none", borderRadius:12, color:"#fff", fontSize:14, fontWeight:800, fontFamily:F, cursor:loading?"not-allowed":"pointer", opacity:loading?0.7:1 }}>
-          {loading ? "Verificando..." : "Entrar"}
-        </button>
-        {error && <p style={{ color:"#FF4D6A", fontSize:12, fontFamily:F, textAlign:"center", marginTop:8 }}>Contraseña incorrecta</p>}
+        {step === "password" ? (
+          <>
+            <input
+              type="password"
+              value={pass}
+              onChange={e=>setPass(e.target.value)}
+              onKeyDown={e=>e.key==="Enter"&&checkPassword()}
+              placeholder="Contraseña de acceso"
+              style={{ width:"100%", boxSizing:"border-box", padding:"14px 16px", background:error?"rgba(255,77,106,0.10)":"rgba(255,255,255,0.07)", border:`1px solid ${error?"rgba(255,77,106,0.5)":"rgba(255,255,255,0.15)"}`, borderRadius:12, color:"#fff", fontSize:14, fontFamily:F, outline:"none", marginBottom:12, transition:"all 0.2s" }}
+            />
+            <button onClick={checkPassword} disabled={loading} style={{ width:"100%", padding:"14px", background:"linear-gradient(135deg,#7B6FFF,#4F8EFF)", border:"none", borderRadius:12, color:"#fff", fontSize:14, fontWeight:800, fontFamily:F, cursor:loading?"not-allowed":"pointer", opacity:loading?0.7:1 }}>
+              {loading ? "Verificando..." : "Continuar"}
+            </button>
+          </>
+        ) : (
+          <>
+            <div style={{ background:"rgba(0,200,150,0.08)", border:"1px solid rgba(0,200,150,0.25)", borderRadius:12, padding:"12px 16px", marginBottom:16, textAlign:"center" }}>
+              <p style={{ color:"#00C896", fontSize:11, fontFamily:F, margin:0 }}>✉️ Revisa tu email — código válido por 5 minutos</p>
+            </div>
+            <input
+              type="text"
+              value={code}
+              onChange={e=>setCode(e.target.value.replace(/\D/g,"").slice(0,6))}
+              onKeyDown={e=>e.key==="Enter"&&checkCode()}
+              placeholder="Código de 6 dígitos"
+              maxLength={6}
+              style={{ width:"100%", boxSizing:"border-box", padding:"14px 16px", background:error?"rgba(255,77,106,0.10)":"rgba(255,255,255,0.07)", border:`1px solid ${error?"rgba(255,77,106,0.5)":"rgba(255,255,255,0.15)"}`, borderRadius:12, color:"#fff", fontSize:22, fontFamily:F, outline:"none", marginBottom:12, textAlign:"center", letterSpacing:"0.3em", fontWeight:800, transition:"all 0.2s" }}
+            />
+            <button onClick={checkCode} disabled={code.length<6} style={{ width:"100%", padding:"14px", background:code.length===6?"linear-gradient(135deg,#7B6FFF,#4F8EFF)":"rgba(255,255,255,0.06)", border:"none", borderRadius:12, color:code.length===6?"#fff":"rgba(255,255,255,0.3)", fontSize:14, fontWeight:800, fontFamily:F, cursor:code.length===6?"pointer":"not-allowed", marginBottom:12 }}>
+              Verificar código
+            </button>
+            <button onClick={resendCode} disabled={countdown>0||loading} style={{ width:"100%", padding:"10px", background:"none", border:"1px solid rgba(255,255,255,0.12)", borderRadius:12, color:countdown>0?"rgba(255,255,255,0.3)":"#F0EDE8", fontSize:13, fontFamily:F, cursor:countdown>0?"not-allowed":"pointer" }}>
+              {countdown>0 ? `Reenviar en ${countdown}s` : "Reenviar código"}
+            </button>
+            <button onClick={()=>{ setStep("password"); setCode(""); setError(""); }} style={{ width:"100%", marginTop:8, padding:"10px", background:"none", border:"none", color:"rgba(255,255,255,0.3)", fontSize:12, fontFamily:F, cursor:"pointer" }}>
+              ← Volver
+            </button>
+          </>
+        )}
+        {error && <p style={{ color:"#FF4D6A", fontSize:12, fontFamily:F, textAlign:"center", marginTop:8 }}>{error}</p>}
       </div>
     </div>
   );
@@ -3208,13 +4100,597 @@ function findProductBySlug(slug) {
   return GLOBAL_PRODUCTS.find(p => toSlug(p.name) === slug) || null;
 }
 
+
+/* ─── DESKTOP NATIVE LAYOUT ─── */
+
+function DesktopTopNav({ screen, setScreen, cartCount, onCartClick, onLogoTap, notifCount, onNotifClick }) {
+  const navItems = [
+    { id:"home",   label:"Inicio",   icon:<HomeIcon active={screen==="home"}/> },
+    { id:"store",  label:"Tienda",   icon:<StoreIcon active={screen==="store"}/> },
+    { id:"games",  label:"Juegos",   icon:<GamesIcon active={screen==="games"}/> },
+    { id:"nexus",  label:"Nexus IA", icon:<NexusIcon active={screen==="nexus"}/> },
+  ];
+  return (
+    <nav style={{ position:"fixed", top:0, left:0, right:0, zIndex:500, height:64, background:"rgba(8,8,14,0.92)", backdropFilter:"blur(24px)", borderBottom:"1px solid rgba(255,255,255,0.07)", display:"flex", alignItems:"center" }}>
+      <div style={{ width:"100%", maxWidth:1300, margin:"0 auto", padding:"0 40px", display:"flex", alignItems:"center", justifyContent:"space-between", boxSizing:"border-box" }}>
+        {/* Logo */}
+        <img src={logo} onClick={onLogoTap} style={{ height:52, width:"auto", objectFit:"contain", cursor:"pointer", flexShrink:0 }}/>
+        {/* Nav links */}
+        <div style={{ display:"flex", gap:2, background:"rgba(255,255,255,0.04)", borderRadius:14, padding:"4px", border:"1px solid rgba(255,255,255,0.06)" }}>
+          {navItems.map(item => {
+            const on = screen === item.id;
+            return (
+              <button key={item.id} onClick={()=>setScreen(item.id)} style={{ display:"flex", alignItems:"center", gap:8, background:on?"rgba(123,111,255,0.18)":"none", border:on?"1px solid rgba(123,111,255,0.35)":"1px solid transparent", borderRadius:10, color:on?"#A89FFF":"rgba(255,255,255,0.55)", fontSize:13, fontWeight:on?700:400, fontFamily:F, cursor:"pointer", padding:"7px 18px", transition:"all 0.15s" }}>
+                {item.icon}
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        {/* Right */}
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <button onClick={onCartClick} style={{ position:"relative", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.10)", borderRadius:11, cursor:"pointer", width:42, height:42, display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.15s", overflow:"visible" }} onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.10)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.06)"}>
+            <CartIcon count={cartCount}/>
+          </button>
+          <button onClick={onNotifClick} style={{ position:"relative", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.10)", borderRadius:11, cursor:"pointer", width:42, height:42, display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.15s", overflow:"visible" }} onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.10)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.06)"}>
+            <BellIcon count={notifCount}/>
+          </button>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+function DesktopLayout({ screen, setScreen, cart, cartCount, onCartClick, onLogoTap, onAddToCart, onBuyNow, orderId, setOrderId, setCheckoutOpen, checkoutOpen, cartOpen, setCartOpen, removeFromCart }) {
+  const notifs = useNotifs();
+  const [notifOpen, setNotifOpen] = useState(false);
+  const leidas = (() => { try { return JSON.parse(localStorage.getItem("sg_notifs_leidas") || "[]"); } catch { return []; } })();
+  const unread = notifs.filter(n => n.activa !== false && !leidas.includes(n.id)).length;
+
+  const W = { maxWidth:1300, margin:"0 auto", padding:"80px 40px 60px", boxSizing:"border-box", width:"100%" };
+
+  return (
+    <div style={{ background:COLORS.bg, minHeight:"100vh", width:"100%", fontFamily:F, color:COLORS.text }}>
+      <style>{`
+        html, body, #root { background: ${COLORS.bg}; margin:0; padding:0; width:100%; }
+        * { box-sizing: border-box; }
+        ::-webkit-scrollbar { width:6px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.12); border-radius:3px; }
+        .sg-hover-card:hover { transform:translateY(-4px); box-shadow:0 12px 40px rgba(0,0,0,0.4) !important; }
+        .sg-hover-card { transition:transform 0.18s ease, box-shadow 0.18s ease !important; }
+        @keyframes sgFadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+        .sg-fade-in { animation:sgFadeIn 0.35s ease forwards; }
+        @keyframes p{0%,100%{transform:scale(1);opacity:.3}50%{transform:scale(1.5);opacity:1}}
+      `}</style>
+
+      {/* Ambient glows */}
+      <div style={{ position:"fixed", inset:0, zIndex:0, pointerEvents:"none", overflow:"hidden" }}>
+        <div style={{ position:"absolute", top:-200, left:"5%", width:600, height:600, borderRadius:"50%", background:"rgba(120,80,255,0.06)", filter:"blur(140px)" }}/>
+        <div style={{ position:"absolute", bottom:-100, right:"5%", width:500, height:500, borderRadius:"50%", background:"rgba(60,140,255,0.05)", filter:"blur(120px)" }}/>
+        <div style={{ position:"absolute", top:"40%", left:"40%", width:400, height:400, borderRadius:"50%", background:"rgba(255,255,255,0.02)", filter:"blur(100px)" }}/>
+      </div>
+
+      <div style={{ position:"relative", zIndex:1, width:"100%" }}>
+        <DesktopTopNav screen={screen} setScreen={setScreen} cartCount={cartCount} onCartClick={onCartClick} onLogoTap={onLogoTap} notifCount={unread} onNotifClick={()=>setNotifOpen(true)}/>
+        {notifOpen && <NotifPanel onClose={()=>setNotifOpen(false)}/>}
+
+        <div style={{ width:"100%" }}>
+          {screen==="home"  && <DesktopHomeScreen setScreen={setScreen} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} wrapStyle={W}/>}
+          {screen==="store" && <DesktopStoreScreen onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} wrapStyle={W}/>}
+          {screen==="games" && <DesktopGamesScreen onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} wrapStyle={W}/>}
+          {screen==="nexus" && <div style={{ paddingTop:64, height:"100vh" }}><NexusScreen/></div>}
+        </div>
+      </div>
+
+      {cartOpen && (
+        <>
+          <div onClick={()=>setCartOpen(false)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", zIndex:800, backdropFilter:"blur(4px)" }}/>
+          <div style={{ position:"fixed", top:0, right:0, bottom:0, width:420, background:"#0E0E1A", borderLeft:"1px solid rgba(255,255,255,0.09)", zIndex:801, display:"flex", flexDirection:"column", overflowY:"auto" }}>
+            <DesktopCartSidebar cart={cart} onClose={()=>setCartOpen(false)} onRemove={removeFromCart} onCheckout={()=>{ setCartOpen(false); setCheckoutOpen(true); }}/>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function DesktopCartSidebar({ cart, onClose, onRemove, onCheckout }) {
+  const tasa = useTasa();
+  const total = cart.reduce((s,i)=>{ const v=parseFloat(i.selectedAmount.replace("$","")); return s+(!isNaN(v)?v*i.quantity:0); },0);
+  const totalUsdt = cart.reduce((s,i)=>{ const r=i.selectedAmount.replace("$","").trim(); const u=getUsdt(i,r); return s+(u?parseFloat(u)*i.quantity:0); },0);
+  const useUsdt = cart.some(i=>getUsdt(i,i.selectedAmount.replace("$","").trim()));
+
+  return (
+    <div style={{ display:"flex", flexDirection:"column", height:"100%" }}>
+      <div style={{ padding:"24px 24px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", borderBottom:"1px solid rgba(255,255,255,0.07)", flexShrink:0 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <CartIcon count={0}/>
+          <h2 style={{ color:COLORS.text, fontSize:18, fontWeight:800, margin:0, fontFamily:F }}>Mi Carrito</h2>
+          {cart.length>0 && <span style={{ background:"rgba(123,111,255,0.2)", border:"1px solid rgba(123,111,255,0.3)", borderRadius:20, padding:"2px 10px", color:"#A89FFF", fontSize:11, fontWeight:700 }}>{cart.length}</span>}
+        </div>
+        <button onClick={onClose} style={{ background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.10)", borderRadius:9, color:"rgba(255,255,255,0.6)", cursor:"pointer", width:32, height:32, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>✕</button>
+      </div>
+
+      <div style={{ flex:1, overflowY:"auto", padding:"16px 24px" }}>
+        {cart.length===0 ? (
+          <div style={{ textAlign:"center", paddingTop:60 }}>
+            <div style={{ fontSize:56, marginBottom:16 }}>🛒</div>
+            <p style={{ color:"rgba(255,255,255,0.35)", fontFamily:F, fontSize:14 }}>Tu carrito está vacío</p>
+            <p style={{ color:"rgba(255,255,255,0.2)", fontFamily:F, fontSize:12, marginTop:4 }}>Agrega productos desde la tienda</p>
+          </div>
+        ) : (
+          <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+            {cart.map((item,i)=>{
+              const rawAmt = item.selectedAmount.replace("$","").trim();
+              const val = parseFloat(rawAmt);
+              const usdt = getUsdt(item, rawAmt);
+              const isPureNum = !isNaN(val) && !/[a-zA-Z]/.test(rawAmt);
+              const isFixedPrice = rawAmt === "price";
+              return (
+                <div key={i} style={{ display:"flex", gap:12, background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:14, padding:"14px" }}>
+                  <img src={getImg(item)} style={{ width:56, height:42, objectFit:"cover", borderRadius:8, flexShrink:0 }}/>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <p style={{ color:COLORS.text, fontWeight:700, fontSize:13, margin:"0 0 3px", fontFamily:F, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{item.name}</p>
+                    {!isFixedPrice && <p style={{ color:"rgba(168,159,255,0.9)", fontSize:11, fontWeight:600, margin:0, fontFamily:F }}>{isPureNum?`$${val} USD`:rawAmt} × {item.quantity}</p>}
+                  </div>
+                  <p style={{ color:COLORS.text, fontWeight:800, fontSize:13, margin:0, fontFamily:F, flexShrink:0, alignSelf:"center" }}>
+                    {usdt?fmtBs(null,tasa,parseFloat(usdt)*item.quantity):isPureNum?fmtBs(val*item.quantity,tasa):"—"}
+                  </p>
+                  <button onClick={()=>onRemove(i)} style={{ background:"rgba(255,77,106,0.18)", border:"1px solid rgba(255,77,106,0.4)", borderRadius:8, color:"#FF4D6A", cursor:"pointer", width:32, height:32, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, alignSelf:"center", padding:0 }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF4D6A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+                    </svg>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {cart.length>0 && (
+        <div style={{ padding:"16px 24px 24px", borderTop:"1px solid rgba(255,255,255,0.07)", flexShrink:0 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+            <p style={{ color:"rgba(255,255,255,0.55)", fontSize:13, fontFamily:F, margin:0 }}>Total</p>
+            <div style={{ textAlign:"right" }}>
+              <p style={{ color:COLORS.text, fontSize:20, fontWeight:900, fontFamily:F, margin:0 }}>{useUsdt?fmtBs(null,tasa,totalUsdt):fmtBs(total,tasa)}</p>
+              {useUsdt && <p style={{ color:"rgba(255,255,255,0.4)", fontSize:11, fontFamily:F, margin:"2px 0 0" }}>{totalUsdt.toFixed(2)} USDT</p>}
+            </div>
+          </div>
+          <button onClick={onCheckout} style={{ width:"100%", padding:"14px", background:"linear-gradient(135deg,#7B6FFF,#4F8EFF)", border:"none", borderRadius:12, color:"#fff", fontSize:14, fontWeight:800, fontFamily:F, cursor:"pointer", boxShadow:"0 4px 20px rgba(100,100,255,0.3)" }}>
+            Ir al checkout →
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DesktopHomeScreen({ setScreen, onAddToCart, onBuyNow, cart, onCartClick, wrapStyle }) {
+  const tasa = useTasa();
+  const products = useProducts();
+  const banner = useBanner();
+  const active = products.filter(p=>p.active!==false);
+  const featured = active.filter(p=>p.featured).slice(0,6);
+  const [detailCard, setDetailCard] = useState(null);
+
+  if (detailCard) return (
+    <div style={{ ...wrapStyle, paddingTop:90 }}>
+      <DesktopProductDetail card={detailCard} onBack={()=>{setDetailCard(null);window.scrollTo(0,0);}} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} tasa={tasa}/>
+    </div>
+  );
+
+  return (
+    <div style={wrapStyle} className="sg-fade-in">
+      {/* Banner hero */}
+      {banner.visible!==false && (
+        <div style={{ background:"linear-gradient(135deg,rgba(123,111,255,0.10) 0%,rgba(15,15,30,0.95) 100%)", borderRadius:24, padding:"40px 48px", marginBottom:48, border:"1px solid rgba(123,111,255,0.18)", position:"relative", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"space-between", gap:40 }}>
+          <div style={{ position:"absolute", top:-60, right:-60, width:300, height:300, borderRadius:"50%", background:"rgba(123,111,255,0.08)", filter:"blur(80px)", pointerEvents:"none" }}/>
+          <div style={{ position:"absolute", bottom:-40, left:"30%", width:200, height:200, borderRadius:"50%", background:"rgba(79,142,255,0.06)", filter:"blur(60px)", pointerEvents:"none" }}/>
+          <div style={{ position:"relative", zIndex:1 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
+              <GlowDot/>
+              <span style={{ color:"#A89FFF", fontSize:11, fontFamily:F, fontWeight:700, letterSpacing:"0.15em" }}>{banner.badge||"NEXUS IA DISPONIBLE"}</span>
+            </div>
+            <h1 style={{ color:COLORS.text, fontSize:36, fontWeight:900, margin:"0 0 10px", lineHeight:1.15, fontFamily:F }}>{banner.title}</h1>
+            <p style={{ color:"rgba(255,255,255,0.5)", fontSize:16, margin:0, fontFamily:F }}>{banner.subtitle}</p>
+          </div>
+          <button onClick={()=>setScreen("nexus")} style={{ flexShrink:0, position:"relative", zIndex:1, background:"rgba(123,111,255,0.22)", color:"#C4BCFF", border:"1px solid rgba(123,111,255,0.45)", borderRadius:14, padding:"14px 32px", fontSize:14, fontWeight:800, fontFamily:F, cursor:"pointer", whiteSpace:"nowrap", transition:"all 0.15s" }} onMouseEnter={e=>{e.currentTarget.style.background="rgba(123,111,255,0.35)";}} onMouseLeave={e=>{e.currentTarget.style.background="rgba(123,111,255,0.22)";}}>
+            {banner.btn}
+          </button>
+        </div>
+      )}
+
+      {/* Populares */}
+      <div style={{ marginBottom:48 }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
+          <div>
+            <p style={{ color:"rgba(255,255,255,0.35)", fontSize:11, fontFamily:F, letterSpacing:"0.15em", fontWeight:700, margin:"0 0 4px" }}>DESTACADOS</p>
+            <h2 style={{ color:COLORS.text, fontSize:22, fontWeight:900, margin:0, fontFamily:F }}>Populares en la tienda</h2>
+          </div>
+          <button onClick={()=>setScreen("store")} style={{ background:"none", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, color:"rgba(255,255,255,0.5)", fontSize:12, fontFamily:F, cursor:"pointer", padding:"7px 16px", fontWeight:600, transition:"all 0.15s" }} onMouseEnter={e=>e.currentTarget.style.borderColor="rgba(255,255,255,0.3)"} onMouseLeave={e=>e.currentTarget.style.borderColor="rgba(255,255,255,0.12)"}>
+            Ver todos →
+          </button>
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(6, 1fr)", gap:14 }}>
+          {featured.map(card=>(
+            <div key={card.id} onClick={()=>{setDetailCard(card);window.scrollTo(0,0);}} className="sg-hover-card" style={{ background:COLORS.card, borderRadius:16, border:`1px solid ${COLORS.border}`, cursor:"pointer", overflow:"hidden", padding:6 }}>
+              <img src={getImg(card)} style={{ width:"100%", aspectRatio:"1/1", objectFit:"contain", borderRadius:10, display:"block", background:"rgba(255,255,255,0.03)" }}/>
+              <p style={{ color:COLORS.text, fontSize:11, fontWeight:700, margin:"8px 6px 6px", fontFamily:F, textAlign:"center", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{card.name}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Últimas publicaciones */}
+      <div style={{ marginBottom:48 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:20 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <defs><linearGradient id="ig2" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stopColor="#f09433"/><stop offset="50%" stopColor="#dc2743"/><stop offset="100%" stopColor="#bc1888"/></linearGradient></defs>
+            <rect x="2" y="2" width="20" height="20" rx="5" stroke="url(#ig2)" strokeWidth="2"/><circle cx="12" cy="12" r="4" stroke="url(#ig2)" strokeWidth="2"/><circle cx="17.5" cy="6.5" r="1.2" fill="url(#ig2)"/>
+          </svg>
+          <h2 style={{ color:COLORS.text, fontSize:22, fontWeight:900, margin:0, fontFamily:F }}>Últimas publicaciones</h2>
+        </div>
+        <LoUltimo/>
+      </div>
+    </div>
+  );
+}
+
+function DesktopStoreScreen({ onAddToCart, onBuyNow, cart, onCartClick, wrapStyle }) {
+  const [filter, setFilter] = useState("Todos");
+  const [search, setSearch] = useState("");
+  const [detailCard, setDetailCard] = useState(null);
+  const tasa = useTasa();
+  const products = useProducts();
+  const filters = ["Todos","Consola","PC","Mobile"];
+  const active = products.filter(p=>p.active!==false);
+
+  if (detailCard) {
+    window.scrollTo(0,0);
+    return (
+      <div style={{ ...wrapStyle, paddingTop:90, maxWidth:760 }}>
+        <DesktopProductDetail card={detailCard} onBack={()=>{setDetailCard(null);window.scrollTo(0,0);}} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} tasa={tasa}/>
+      </div>
+    );
+  }
+
+  const filtered = active.filter(c=>{
+    const cats = Array.isArray(c.category)?c.category:[c.category].filter(Boolean);
+    return (filter==="Todos"||cats.includes(filter)) && (!search||c.name.toLowerCase().includes(search.toLowerCase()));
+  }).sort((a,b)=>{ if(a.low_priority&&!b.low_priority) return 1; if(!a.low_priority&&b.low_priority) return -1; return 0; });
+
+  return (
+    <div style={wrapStyle} className="sg-fade-in">
+      <div style={{ display:"flex", gap:32 }}>
+        {/* Sidebar */}
+        <div style={{ width:220, flexShrink:0 }}>
+          <div style={{ position:"sticky", top:80 }}>
+            <h2 style={{ color:COLORS.text, fontSize:24, fontWeight:900, margin:"0 0 24px", fontFamily:F }}>Tienda</h2>
+            <p style={{ color:"rgba(255,255,255,0.3)", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.12em", margin:"0 0 10px" }}>CATEGORÍA</p>
+            <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+              {filters.map(f=>(
+                <button key={f} onClick={()=>setFilter(f)} style={{ background:filter===f?"rgba(123,111,255,0.15)":"none", border:`1px solid ${filter===f?"rgba(123,111,255,0.35)":"transparent"}`, borderRadius:10, color:filter===f?"#A89FFF":"rgba(255,255,255,0.55)", fontSize:13, fontWeight:filter===f?700:400, fontFamily:F, cursor:"pointer", padding:"9px 14px", textAlign:"left", transition:"all 0.12s" }}>
+                  {f}
+                </button>
+              ))}
+            </div>
+            <div style={{ marginTop:32, padding:"16px", background:"rgba(255,255,255,0.03)", borderRadius:14, border:"1px solid rgba(255,255,255,0.06)" }}>
+              <p style={{ color:"rgba(255,255,255,0.3)", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:"0 0 6px" }}>RESULTADOS</p>
+              <p style={{ color:COLORS.text, fontSize:28, fontWeight:900, fontFamily:F, margin:0 }}>{filtered.length}</p>
+              <p style={{ color:"rgba(255,255,255,0.3)", fontSize:11, fontFamily:F, margin:"2px 0 0" }}>productos</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Main */}
+        <div style={{ flex:1, minWidth:0 }}>
+          {/* Search */}
+          <div style={{ background:"rgba(255,255,255,0.04)", borderRadius:14, border:"1px solid rgba(255,255,255,0.08)", padding:"12px 18px", display:"flex", alignItems:"center", gap:12, marginBottom:28, transition:"border 0.2s", ...(search?{border:"1px solid rgba(123,111,255,0.35)"}:{}) }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0 }}>
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar productos..." style={{ background:"none", border:"none", outline:"none", color:COLORS.text, fontSize:14, fontFamily:F, flex:1 }}/>
+            {search && <button onClick={()=>setSearch("")} style={{ background:"rgba(255,255,255,0.08)", border:"none", borderRadius:6, color:"rgba(255,255,255,0.4)", cursor:"pointer", width:22, height:22, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, flexShrink:0 }}>✕</button>}
+          </div>
+
+          {/* Grid */}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(210px, 1fr))", gap:16 }}>
+            {filtered.map(card=>(
+              <div key={card.id} onClick={()=>{setDetailCard(card);window.scrollTo(0,0);}} className="sg-hover-card" style={{ background:COLORS.card, borderRadius:18, border:`1px solid ${COLORS.border}`, cursor:"pointer", overflow:"hidden", padding:6 }}>
+                <div style={{ position:"relative" }}>
+                  <img src={getImg(card)} style={{ width:"100%", aspectRatio:"16/9", objectFit:"cover", display:"block", borderRadius:12 }}/>
+                  {card.tag && <span style={{ position:"absolute", top:9, right:9, background:card.tag==="Oferta"?COLORS.danger:card.tag==="Nuevo"?"rgba(123,111,255,0.9)":"rgba(0,0,0,0.6)", backdropFilter:"blur(8px)", color:"#fff", fontSize:9, fontFamily:F, fontWeight:700, padding:"3px 8px", borderRadius:5 }}>{card.tag}</span>}
+                </div>
+                <div style={{ padding:"14px 14px 12px" }}>
+                  <p style={{ color:COLORS.text, fontWeight:700, fontSize:14, margin:"0 0 4px", fontFamily:F }}>{card.name}</p>
+                  <p style={{ color:"rgba(255,255,255,0.45)", fontSize:11, margin:"0 0 14px", fontFamily:F }}>
+                    {(()=>{ const a=(card.amounts||[])[0]; const u=getUsdt(card,a); const n=parseFloat(String(a)); if(u) return `Desde ${fmtBs(null,GLOBAL_TASA,parseFloat(u))}`; if(!isNaN(n)) return `Desde ${fmtBs(n,GLOBAL_TASA)}`; return `Desde ${a||""}`; })()}
+                  </p>
+                  <button style={{ width:"100%", background:"rgba(255,255,255,0.08)", color:COLORS.text, border:"1px solid rgba(255,255,255,0.15)", borderRadius:9, padding:"9px", fontSize:11, fontFamily:F, fontWeight:700, cursor:"pointer" }}>VER MONTOS →</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DesktopGameDetail({ card, onAddToCart, onBuyNow, cart, tasa }) {
+  const [added, setAdded] = useState(false);
+  const [oferta, setOferta] = useState(null);
+  const t = tasa || GLOBAL_TASA;
+  const usdtVal = card.usdt_prices ? parseFloat(Object.values(card.usdt_prices)[0]) : null;
+  const amt = (card.amounts||[])[0];
+  const numAmt = parseFloat(String(amt));
+  const fixedAmount = amt ? (isNaN(numAmt) ? amt : `$${numAmt}`) : "$0";
+  const isOnSale = card.tag === "Oferta" && oferta;
+  const originalPrice = isOnSale ? parseFloat(Object.values(oferta.original_prices)[0]) : null;
+  const discount = isOnSale && originalPrice ? Math.round((1 - usdtVal / originalPrice) * 100) : null;
+
+  useEffect(()=>{
+    if (card.tag==="Oferta") {
+      fetch(`${SUPABASE_URL}/rest/v1/game_ofertas?game_id=eq.${card.id}&active=eq.true&select=*`, { headers: HEADERS })
+        .then(r=>r.json()).then(rows=>{ if(rows?.[0]) setOferta(rows[0]); }).catch(()=>{});
+    }
+  },[]);
+
+  const handleAddToCart = ()=>{ onAddToCart({...card, selectedAmount:fixedAmount, quantity:1}); setAdded(true); setTimeout(()=>setAdded(false),2000); };
+  const handleBuyNow = ()=>{ const already=cart.some(i=>i.id===card.id&&i.selectedAmount===fixedAmount); if(!already) onAddToCart({...card, selectedAmount:fixedAmount, quantity:1}); if(onBuyNow) onBuyNow(); };
+
+  return (
+    <div className="sg-fade-in" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:40 }}>
+      {/* Left */}
+      <div>
+        <div style={{ borderRadius:20, overflow:"hidden", border:"1px solid rgba(255,255,255,0.09)", marginBottom:20 }}>
+          <img src={getImg(card)} style={{ width:"100%", height:"auto", display:"block" }}/>
+        </div>
+        {card.description && (
+          <div style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:16, padding:"18px 20px" }}>
+            <p style={{ color:"rgba(255,255,255,0.4)", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.12em", margin:"0 0 8px" }}>DESCRIPCIÓN</p>
+            <p style={{ color:"rgba(255,255,255,0.7)", fontSize:13, fontFamily:F, lineHeight:1.7, margin:0 }}>{card.description}</p>
+          </div>
+        )}
+      </div>
+      {/* Right */}
+      <div>
+        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12, flexWrap:"wrap" }}>
+          {card.tag && <span style={{ background:card.tag==="Oferta"?"rgba(255,77,106,0.15)":"rgba(255,255,255,0.08)", border:`1px solid ${card.tag==="Oferta"?"rgba(255,77,106,0.35)":"rgba(255,255,255,0.15)"}`, borderRadius:8, padding:"4px 10px", color:card.tag==="Oferta"?COLORS.danger:COLORS.textMuted, fontSize:10, fontFamily:F, fontWeight:700 }}>{card.tag}</span>}
+          {isOnSale && oferta?.expires_at && (()=>{
+            const daysLeft = Math.ceil((new Date(oferta.expires_at)-new Date())/(1000*60*60*24));
+            return <span style={{ background:"rgba(243,186,47,0.12)", border:"1px solid rgba(243,186,47,0.3)", borderRadius:8, padding:"4px 10px", color:"#F3BA2F", fontSize:10, fontFamily:F, fontWeight:700 }}>⏱ Finaliza en {daysLeft} día{daysLeft!==1?"s":""}</span>;
+          })()}
+        </div>
+        <h1 style={{ color:COLORS.text, fontSize:32, fontWeight:900, margin:"0 0 24px", fontFamily:F, lineHeight:1.15 }}>{card.name}</h1>
+
+        <div style={{ background:"rgba(255,255,255,0.04)", border:`1px solid ${isOnSale?"rgba(255,77,106,0.25)":"rgba(255,255,255,0.08)"}`, borderRadius:18, padding:"24px", marginBottom:20 }}>
+          <p style={{ color:"rgba(255,255,255,0.4)", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.12em", margin:"0 0 14px" }}>PRECIO</p>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+            <div>
+              <p style={{ color:COLORS.text, fontSize:28, fontWeight:900, fontFamily:F, margin:0 }}>
+                {usdtVal ? fmtBs(null,t,usdtVal) : !isNaN(numAmt) ? fmtBs(numAmt,t) : fixedAmount}
+              </p>
+              <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:6 }}>
+                {usdtVal && <p style={{ color:"rgba(255,255,255,0.4)", fontSize:12, fontFamily:F, margin:0 }}>{usdtVal.toFixed(2)} USDT</p>}
+                {isOnSale && originalPrice && <p style={{ color:"rgba(255,255,255,0.25)", fontSize:12, fontFamily:F, margin:0, textDecoration:"line-through" }}>{originalPrice.toFixed(2)} USDT</p>}
+              </div>
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:6, alignItems:"flex-end" }}>
+              {discount!==null && <span style={{ background:"rgba(255,77,106,0.2)", border:"1px solid rgba(255,77,106,0.45)", borderRadius:8, padding:"4px 10px", color:"#FF4D6A", fontSize:12, fontFamily:F, fontWeight:800 }}>-{discount}%</span>}
+              {card.category && (Array.isArray(card.category)?card.category:[card.category]).map(c=>(
+                <span key={c} style={{ background:"rgba(123,111,255,0.15)", border:"1px solid rgba(123,111,255,0.3)", borderRadius:8, padding:"4px 10px", color:"#A89FFF", fontSize:10, fontFamily:F, fontWeight:700 }}>{c}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display:"flex", gap:12, marginBottom:14 }}>
+          <button onClick={handleBuyNow} style={{ flex:1, padding:"15px", background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.28)", borderRadius:14, color:COLORS.text, fontSize:14, fontWeight:800, fontFamily:F, cursor:"pointer" }}>Comprar ahora</button>
+          <button onClick={handleAddToCart} style={{ flex:1, padding:"15px", background:added?"rgba(0,200,150,0.15)":"rgba(123,111,255,0.15)", border:`1px solid ${added?"rgba(0,200,150,0.4)":"rgba(123,111,255,0.35)"}`, borderRadius:14, color:added?"#00C896":"#A89FFF", fontSize:14, fontWeight:800, fontFamily:F, cursor:"pointer", transition:"all 0.2s" }}>
+            {added?"✓ AGREGADO":"+ AL CARRITO"}
+          </button>
+        </div>
+        <p style={{ color:"rgba(255,255,255,0.25)", fontSize:11, textAlign:"center", fontFamily:F, margin:0 }}>🔒 Entrega digital segura · 10–30 minutos</p>
+      </div>
+    </div>
+  );
+}
+
+function DesktopGamesScreen({ onAddToCart, onBuyNow, cart, onCartClick, wrapStyle }) {
+  const games = useGames();
+  const tasa = useTasa();
+  const [filter, setFilter] = useState("Todos");
+  const [search, setSearch] = useState("");
+  const [detailCard, setDetailCard] = useState(null);
+  const filters = ["Todos","Xbox","Steam"];
+  const active = games.filter(p=>p.active!==false);
+
+  if (detailCard) {
+    window.scrollTo(0,0);
+    return (
+      <div style={{ ...wrapStyle, paddingTop:90, maxWidth:960 }}>
+        <button onClick={()=>{setDetailCard(null);window.scrollTo(0,0);}} style={{ display:"flex", alignItems:"center", gap:8, background:"none", border:"none", color:"rgba(255,255,255,0.5)", cursor:"pointer", fontSize:13, fontFamily:F, padding:0, marginBottom:28, fontWeight:600 }}>← Volver</button>
+        <DesktopGameDetail card={detailCard} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} tasa={tasa}/>
+      </div>
+    );
+  }
+
+  const filtered = active.filter(c=>{
+    const cats = Array.isArray(c.category)?c.category:[c.category].filter(Boolean);
+    const matchCat = filter==="Todos" || cats.includes(filter);
+    const matchSearch = !search || (c.name||"").toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchSearch;
+  }).sort((a,b)=>{
+    if(a.tag==="Oferta"&&b.tag!=="Oferta") return -1;
+    if(a.tag!=="Oferta"&&b.tag==="Oferta") return 1;
+    if(a.low_priority&&!b.low_priority) return 1;
+    if(!a.low_priority&&b.low_priority) return -1;
+    return 0;
+  });
+
+  return (
+    <div style={wrapStyle} className="sg-fade-in">
+      <div style={{ marginBottom:32 }}>
+        <p style={{ color:"rgba(255,255,255,0.35)", fontSize:11, fontFamily:F, letterSpacing:"0.15em", fontWeight:700, margin:"0 0 4px" }}>CATÁLOGO</p>
+        <h2 style={{ color:COLORS.text, fontSize:28, fontWeight:900, margin:0, fontFamily:F }}>Juegos</h2>
+      </div>
+
+      {/* Filters + search */}
+      <div style={{ display:"flex", gap:12, marginBottom:28, alignItems:"center" }}>
+        <div style={{ display:"flex", gap:4, background:"rgba(255,255,255,0.04)", borderRadius:12, padding:"4px", border:"1px solid rgba(255,255,255,0.07)" }}>
+          {filters.map(f=>(
+            <button key={f} onClick={()=>setFilter(f)} style={{ background:filter===f?"rgba(123,111,255,0.2)":"none", border:`1px solid ${filter===f?"rgba(123,111,255,0.35)":"transparent"}`, borderRadius:9, color:filter===f?"#A89FFF":"rgba(255,255,255,0.45)", fontSize:12, fontWeight:filter===f?700:400, fontFamily:F, cursor:"pointer", padding:"6px 16px", transition:"all 0.12s" }}>{f}</button>
+          ))}
+        </div>
+        <div style={{ flex:1, background:"rgba(255,255,255,0.04)", borderRadius:12, border:"1px solid rgba(255,255,255,0.08)", padding:"9px 14px", display:"flex", alignItems:"center", gap:10 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar juegos..." style={{ background:"none", border:"none", outline:"none", color:COLORS.text, fontSize:13, fontFamily:F, flex:1 }}/>
+        </div>
+      </div>
+
+      {active.length===0 ? (
+        <div style={{ textAlign:"center", padding:"80px 0" }}>
+          <div style={{ fontSize:56, marginBottom:16 }}>🎮</div>
+          <h3 style={{ color:"rgba(255,255,255,0.35)", fontFamily:F, fontWeight:700, margin:"0 0 8px" }}>Sin juegos por ahora</h3>
+          <p style={{ color:"rgba(255,255,255,0.2)", fontFamily:F, fontSize:13 }}>Próximamente habrá más contenido</p>
+        </div>
+      ) : (
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(220px, 1fr))", gap:16 }}>
+          {filtered.map(card=>(
+            <div key={card.id} onClick={()=>{setDetailCard(card);window.scrollTo(0,0);}} className="sg-hover-card" style={{ background:COLORS.card, borderRadius:18, border:`1px solid ${COLORS.border}`, cursor:"pointer", overflow:"hidden", padding:6 }}>
+              <div style={{ position:"relative" }}>
+                <img src={getImg(card)} style={{ width:"100%", aspectRatio:"16/9", objectFit:"cover", display:"block", borderRadius:12 }}/>
+                {card.tag && <span style={{ position:"absolute", top:9, right:9, background:card.tag==="Oferta"?COLORS.danger:card.tag==="Nuevo"?"rgba(123,111,255,0.9)":"rgba(0,0,0,0.6)", backdropFilter:"blur(8px)", color:"#fff", fontSize:9, fontFamily:F, fontWeight:700, padding:"3px 8px", borderRadius:5 }}>{card.tag}</span>}
+              </div>
+              <div style={{ padding:"12px 14px" }}>
+                <p style={{ color:COLORS.text, fontWeight:700, fontSize:13, margin:"0 0 4px", fontFamily:F }}>{card.name}</p>
+                <p style={{ color:"rgba(255,255,255,0.4)", fontSize:11, margin:"0 0 12px", fontFamily:F }}>
+                  {(()=>{ const a=(card.amounts||[])[0]; const u=getUsdt(card,a); const n=parseFloat(String(a)); if(u) return `Desde ${fmtBs(null,tasa,parseFloat(u))}`; if(!isNaN(n)) return `Desde ${fmtBs(n,tasa)}`; return `Desde ${a||""}`; })()}
+                </p>
+                <button style={{ width:"100%", background:"rgba(255,255,255,0.08)", color:COLORS.text, border:"1px solid rgba(255,255,255,0.15)", borderRadius:9, padding:"8px", fontSize:11, fontFamily:F, fontWeight:700, cursor:"pointer" }}>VER MONTOS →</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DesktopProductDetail({ card, onBack, onAddToCart, onBuyNow, cart, onCartClick, tasa }) {
+  const [selectedAmount, setSelectedAmount] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [added, setAdded] = useState(false);
+  const t = tasa || GLOBAL_TASA;
+  const cartCount = cart.reduce((s,i)=>s+i.quantity,0);
+  const _raw = selectedAmount.replace("$","").trim();
+  const isPureNumeric = !isNaN(parseFloat(_raw)) && !/[a-zA-Z]/.test(_raw);
+  const amountValue = isPureNumeric ? parseFloat(_raw) : 0;
+  const selectedUsdt = selectedAmount ? getUsdt(card, _raw) : null;
+  const total = amountValue * quantity;
+  const totalUsdtCard = selectedUsdt ? parseFloat(selectedUsdt)*quantity : null;
+
+  const handleAddToCart = () => {
+    if (!selectedAmount) return;
+    onAddToCart({...card, selectedAmount, quantity});
+    setAdded(true);
+    setTimeout(()=>setAdded(false), 2000);
+  };
+  const handleBuyNow = () => {
+    if (!selectedAmount) return;
+    const already = cart.some(i=>i.id===card.id&&i.selectedAmount===selectedAmount);
+    if (!already) onAddToCart({...card, selectedAmount, quantity});
+    if (onBuyNow) onBuyNow();
+  };
+
+  return (
+    <div className="sg-fade-in">
+      <button onClick={onBack} style={{ display:"flex", alignItems:"center", gap:8, background:"none", border:"none", color:"rgba(255,255,255,0.5)", cursor:"pointer", fontSize:13, fontFamily:F, padding:0, marginBottom:28, fontWeight:600 }}>
+        <span>←</span> Volver
+      </button>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:40 }}>
+        {/* Left — image + description */}
+        <div>
+          <div style={{ borderRadius:20, overflow:"hidden", border:"1px solid rgba(255,255,255,0.09)", marginBottom:20, background:"rgba(255,255,255,0.03)" }}>
+            <img src={getImg(card)} style={{ width:"100%", height:"auto", display:"block" }}/>
+          </div>
+          {card.description && (
+            <div style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:16, padding:"18px 20px" }}>
+              <p style={{ color:"rgba(255,255,255,0.4)", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.12em", margin:"0 0 8px" }}>DESCRIPCIÓN</p>
+              <p style={{ color:"rgba(255,255,255,0.7)", fontSize:13, fontFamily:F, lineHeight:1.7, margin:0 }}>{card.description}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Right — purchase */}
+        <div>
+          {card.tag && <span style={{ display:"inline-block", background:card.tag==="Oferta"?"rgba(255,77,106,0.15)":"rgba(123,111,255,0.15)", border:`1px solid ${card.tag==="Oferta"?"rgba(255,77,106,0.3)":"rgba(123,111,255,0.3)"}`, borderRadius:8, padding:"3px 12px", color:card.tag==="Oferta"?"#FF4D6A":"#A89FFF", fontSize:11, fontFamily:F, fontWeight:700, marginBottom:12 }}>{card.tag}</span>}
+          <h1 style={{ color:COLORS.text, fontSize:32, fontWeight:900, margin:"0 0 24px", fontFamily:F, lineHeight:1.15 }}>{card.name}</h1>
+
+          <div style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:18, padding:"24px", marginBottom:20 }}>
+            <p style={{ color:"rgba(255,255,255,0.4)", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.12em", margin:"0 0 12px" }}>MONTO</p>
+            <div style={{ position:"relative", marginBottom:20 }}>
+              <select value={selectedAmount} onChange={e=>setSelectedAmount(e.target.value)} style={{ width:"100%", padding:"14px 16px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.18)", borderRadius:12, color:selectedAmount?COLORS.text:"rgba(255,255,255,0.3)", fontSize:14, fontFamily:F, fontWeight:600, cursor:"pointer", outline:"none", appearance:"none" }}>
+                <option value="" disabled style={{ background:"#1a1a2e" }}>ELIGE UNA OPCIÓN</option>
+                {(card.amounts||[]).map(a=>{
+                  const str=String(a).trim(); const isPureNum=!isNaN(parseFloat(str))&&!/[a-zA-Z]/.test(str);
+                  const val=isPureNum?`$${parseFloat(str)}`:str; const label=isPureNum?`$${parseFloat(str)} USD`:str;
+                  return <option key={a} value={val} style={{ background:"#1a1a2e", color:"#fff" }}>{label}</option>;
+                })}
+              </select>
+              <span style={{ position:"absolute", right:14, top:"50%", transform:"translateY(-50%)", color:"rgba(255,255,255,0.4)", fontSize:12, pointerEvents:"none" }}>▼</span>
+            </div>
+
+            <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:20 }}>
+              <p style={{ color:"rgba(255,255,255,0.4)", fontSize:11, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:0 }}>CANTIDAD</p>
+              <div style={{ display:"flex", alignItems:"center", background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.15)", borderRadius:10, overflow:"hidden" }}>
+                <button onClick={()=>setQuantity(q=>Math.max(1,q-1))} style={{ width:38, height:38, background:"none", border:"none", color:COLORS.text, fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>−</button>
+                <span style={{ minWidth:36, textAlign:"center", color:COLORS.text, fontSize:15, fontWeight:800, fontFamily:F }}>{quantity}</span>
+                <button onClick={()=>setQuantity(q=>q+1)} style={{ width:38, height:38, background:"none", border:"none", color:COLORS.text, fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>+</button>
+              </div>
+            </div>
+
+            <div style={{ height:1, background:"rgba(255,255,255,0.07)", marginBottom:18 }}/>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <p style={{ color:"rgba(255,255,255,0.5)", fontSize:14, fontFamily:F, fontWeight:700, margin:0 }}>Total</p>
+              <div style={{ textAlign:"right" }}>
+                {!selectedAmount ? <p style={{ color:COLORS.text, fontSize:24, fontWeight:900, fontFamily:F, margin:0 }}>Bs. 0,00</p>
+                  : totalUsdtCard ? <>
+                    <p style={{ color:COLORS.text, fontSize:24, fontWeight:900, fontFamily:F, margin:0 }}>{fmtBs(null,t,totalUsdtCard)}</p>
+                    <p style={{ color:"rgba(255,255,255,0.4)", fontSize:12, fontFamily:F, margin:"3px 0 0" }}>{totalUsdtCard.toFixed(2)} USDT</p>
+                  </>
+                  : isPureNumeric&&total>0 ? <>
+                    <p style={{ color:COLORS.text, fontSize:24, fontWeight:900, fontFamily:F, margin:0 }}>{fmtBs(total,t)}</p>
+                    <p style={{ color:"rgba(255,255,255,0.4)", fontSize:12, fontFamily:F, margin:"3px 0 0" }}>${total} USD</p>
+                  </>
+                  : <p style={{ color:COLORS.text, fontSize:22, fontWeight:900, fontFamily:F, margin:0 }}>{selectedAmount}</p>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display:"flex", gap:12, marginBottom:14 }}>
+            <button onClick={handleBuyNow} disabled={!selectedAmount} style={{ flex:1, padding:"15px", background:selectedAmount?"rgba(255,255,255,0.15)":"rgba(255,255,255,0.05)", border:`1px solid ${selectedAmount?"rgba(255,255,255,0.28)":"rgba(255,255,255,0.08)"}`, borderRadius:14, color:selectedAmount?COLORS.text:"rgba(255,255,255,0.3)", fontSize:14, fontWeight:800, fontFamily:F, cursor:selectedAmount?"pointer":"not-allowed", transition:"all 0.15s" }}>
+              Comprar ahora
+            </button>
+            <button onClick={handleAddToCart} disabled={!selectedAmount} style={{ flex:1, padding:"15px", background:added?"rgba(0,200,150,0.15)":selectedAmount?"rgba(123,111,255,0.15)":"rgba(255,255,255,0.04)", border:`1px solid ${added?"rgba(0,200,150,0.4)":selectedAmount?"rgba(123,111,255,0.35)":"rgba(255,255,255,0.08)"}`, borderRadius:14, color:added?"#00C896":selectedAmount?"#A89FFF":"rgba(255,255,255,0.25)", fontSize:14, fontWeight:800, fontFamily:F, cursor:selectedAmount?"pointer":"not-allowed", transition:"all 0.2s" }}>
+              {added?"✓ AGREGADO":"+ AL CARRITO"}
+            </button>
+          </div>
+          <p style={{ color:"rgba(255,255,255,0.25)", fontSize:11, textAlign:"center", fontFamily:F, margin:0 }}>🔒 Entrega digital segura · 0–10 minutos</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [screen, setScreen_] = useState("home");
-  const setScreen = (s) => { setScreen_(s); setTimeout(()=>{ if(mainScrollRef.current) mainScrollRef.current.scrollTop=0; },0); };
-  const [profilePhoto, setProfilePhoto] = useState(null);
-  const mainScrollRef = useRef(null);
-  const [session, setSession] = useState(() => {
-    // Check for Google OAuth redirect
+  const setScreen = (s) => { setScreen_(s); window.scrollTo(0,0); };
+  const [session, setSession] = useState(()=>{
     const hash = sbAuth.parseHashSession();
     if (hash) { sbAuth.saveSession(hash); return hash; }
     return sbAuth.getSession();
@@ -3224,15 +4700,12 @@ export default function App() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [orderId, setOrderId] = useState(null);
   const [adminMode, setAdminMode] = useState(false);
-  const [deepLinkCard, setDeepLinkCard] = useState(null);
   const [adminAuth, setAdminAuth] = useState(false);
-  // Si hay cache, no mostrar pantalla de carga nunca
-  const hasCache = (() => { try { return !!localStorage.getItem("sg_cache_v1"); } catch(e) { return false; } })();
+  const [deepLinkCard, setDeepLinkCard] = useState(null);
+  const hasCache = (()=>{ try { return !!localStorage.getItem("sg_cache_v1"); } catch(e){ return false; } })();
   const [appReady, setAppReady] = useState(hasCache);
 
-  // Load tasa + products on mount
-  useEffect(() => {
-    // Paso 1: cache de localStorage (datos reales de la sesion anterior)
+  useEffect(()=>{
     const CACHE_KEY = "sg_cache_v1";
     let hasCache = false;
     try {
@@ -3243,183 +4716,102 @@ export default function App() {
         if (tasa) setGlobalTasa(tasa);
         if (methods?.length) setGlobalMethods(methods);
         hasCache = true;
-      } else {
-        setGlobalProducts(DEFAULT_PRODUCTS);
-      }
-    } catch(e) {
-      setGlobalProducts(DEFAULT_PRODUCTS);
-    }
-    // Solo mostrar app de inmediato si hay cache — si no, esperar Supabase (primera visita)
-    if (hasCache) {
-      setAppReady(true);
-      document.body.style.overflow = "";
-    }
-
-    // Paso 2: Supabase en background — actualiza y guarda cache
+      } else { setGlobalProducts(DEFAULT_PRODUCTS); }
+    } catch(e) { setGlobalProducts(DEFAULT_PRODUCTS); }
+    if (hasCache) { setAppReady(true); document.body.style.overflow=""; }
     Promise.all([
       sb.getSetting("tasa_dolar"),
       sb.getAll("products"),
       sb.getSetting("payment_methods"),
-    ]).then(([tasa, rows, payMethods]) => {
-      const newTasa = tasa ? parseFloat(tasa) : null;
-      const newMethods = payMethods ? (() => { try { return JSON.parse(payMethods); } catch(e) { return null; } })() : null;
-      const newProducts = Array.isArray(rows) && rows.length > 0 ? rows : null;
+      sb.getAll("games"),
+    ]).then(([tasa, rows, payMethods, gameRows])=>{
+      const newTasa = tasa?parseFloat(tasa):null;
+      const newMethods = payMethods?(()=>{ try{ return JSON.parse(payMethods); }catch(e){ return null; } })():null;
+      const newProducts = Array.isArray(rows)&&rows.length>0?rows:null;
+      const newGames = Array.isArray(gameRows)?gameRows:[];
       if (newTasa) setGlobalTasa(newTasa);
       if (newMethods) setGlobalMethods(newMethods);
       if (newProducts) setGlobalProducts(newProducts);
+      setGlobalGames(newGames);
       setAppReady(true);
-      document.body.style.overflow = "";
-      // Paso 3: guardar cache para proxima apertura
-      try {
-        localStorage.setItem("sg_cache_v1", JSON.stringify({
-          products: newProducts || GLOBAL_PRODUCTS,
-          tasa: newTasa || GLOBAL_TASA,
-          methods: newMethods || GLOBAL_METHODS,
-        }));
-      } catch(e) {}
-      if(mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
-      const hashSlug = window.location.hash.replace(/^#\/?/, "");
-      if (hashSlug && hashSlug !== "/") {
+      document.body.style.overflow="";
+      try { localStorage.setItem("sg_cache_v1", JSON.stringify({ products:newProducts||GLOBAL_PRODUCTS, tasa:newTasa||GLOBAL_TASA, methods:newMethods||GLOBAL_METHODS })); } catch(e){}
+      const hashSlug = window.location.hash.replace(/^#\/?/,"");
+      if (hashSlug && hashSlug!=="/") {
         const found = findProductBySlug(hashSlug);
         if (found) setDeepLinkCard(found);
       }
     });
-  }, []);
+  },[]);
 
-  // Secret: tap logo 5 times to open admin
   const logoTaps = useRef(0);
   const logoTimer = useRef(null);
-  const tapLogo = () => {
-    logoTaps.current += 1;
+  const tapLogo = ()=>{
+    logoTaps.current+=1;
     if (logoTimer.current) clearTimeout(logoTimer.current);
-    if (logoTaps.current >= 5) {
-      logoTaps.current = 0;
-      setAdminMode(true);
-      return;
-    }
-    logoTimer.current = setTimeout(() => { logoTaps.current = 0; }, 3000);
+    if (logoTaps.current>=5) { logoTaps.current=0; setAdminMode(true); return; }
+    logoTimer.current = setTimeout(()=>{ logoTaps.current=0; },3000);
   };
 
-  const addToCart = (item) => {
-    setCart(prev => {
-      const idx = prev.findIndex(x => x.id === item.id && x.selectedAmount === item.selectedAmount);
-      if (idx >= 0) {
-        const updated = [...prev];
-        updated[idx] = { ...updated[idx], quantity: updated[idx].quantity + item.quantity };
-        return updated;
-      }
+  const addToCart = (item)=>{
+    setCart(prev=>{
+      const idx = prev.findIndex(x=>x.id===item.id&&x.selectedAmount===item.selectedAmount);
+      if (idx>=0) { const u=[...prev]; u[idx]={...u[idx],quantity:u[idx].quantity+item.quantity}; return u; }
       return [...prev, item];
     });
   };
+  const removeFromCart = (i)=>setCart(prev=>prev.filter((_,idx)=>idx!==i));
+  const updateQty = (i,qty)=>setCart(prev=>prev.map((item,idx)=>idx===i?{...item,quantity:qty}:item));
+  const cartCount = cart.reduce((s,i)=>s+i.quantity,0);
 
-  const removeFromCart = (i) => setCart(prev => prev.filter((_,idx)=>idx!==i));
-  const updateQty = (i, qty) => setCart(prev => prev.map((item, idx) => idx===i ? {...item, quantity:qty} : item));
-  const cartCount = cart.reduce((s, i) => s + i.quantity, 0);
-
-  const isDesktop = useIsDesktop();
-
-  // Loading screen
   if (!appReady) return (
-    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"#0a0a14", overflow:"hidden" }}>
+    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"#0a0a14", overflow:"hidden", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
       <style>{`@keyframes p{0%,100%{transform:scale(1);opacity:.3}50%{transform:scale(1.5);opacity:1}}`}</style>
-      <img src={logo} style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%, -60%)", height:300, width:"auto" }}/>
-      <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%, 80px)", display:"flex", gap:8 }}>
-        <div style={{ width:8, height:8, borderRadius:"50%", background:"#fff", animation:"p 1.2s ease-in-out 0s infinite" }}/>
-        <div style={{ width:8, height:8, borderRadius:"50%", background:"#fff", animation:"p 1.2s ease-in-out 0.2s infinite" }}/>
-        <div style={{ width:8, height:8, borderRadius:"50%", background:"#fff", animation:"p 1.2s ease-in-out 0.4s infinite" }}/>
+      <img src={logo} style={{ height:200, width:"auto", marginBottom:32 }}/>
+      <div style={{ display:"flex", gap:8 }}>
+        {[0,1,2].map(i=><div key={i} style={{ width:8, height:8, borderRadius:"50%", background:"#fff", animation:`p 1.2s ease-in-out ${i*0.2}s infinite` }}/>)}
       </div>
     </div>
   );
 
-  // Admin mode overlay
   if (adminMode) {
     if (!adminAuth) return (
-      <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:COLORS.bg, overflowY:"auto", zIndex:9999, fontFamily:F, color:COLORS.text }}>
+      <div style={{ position:"fixed", inset:0, background:COLORS.bg, overflowY:"auto", zIndex:9999, fontFamily:F, color:COLORS.text }}>
         <AdminLogin onSuccess={()=>setAdminAuth(true)}/>
       </div>
     );
     return (
-      <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:COLORS.bg, overflowY:"auto", zIndex:9999, fontFamily:F, color:COLORS.text }}>
+      <div style={{ position:"fixed", inset:0, background:COLORS.bg, overflowY:"auto", zIndex:9999, fontFamily:F, color:COLORS.text }}>
         <AdminPanel onExit={()=>{ setAdminMode(false); setAdminAuth(false); }}/>
       </div>
     );
   }
 
-  // ── DESKTOP LAYOUT ──
-  if (isDesktop && !adminMode && !orderId && !checkoutOpen) {
-    return (
-      <div style={{ background:COLORS.bg, minHeight:"100vh", width:"100vw", fontFamily:F, color:COLORS.text, overflowX:"hidden" }}>
-        <style>{`
-          html, body, #root { background: ${COLORS.bg}; margin: 0; padding: 0; width: 100%; overflow-x: hidden; }
-        `}</style>
-        {/* Glows */}
-        <div style={{ position:"fixed", inset:0, zIndex:0, pointerEvents:"none", overflow:"hidden" }}>
-          <div style={{ position:"absolute", top:-100, left:"10%", width:500, height:500, borderRadius:"50%", background:"rgba(120,80,255,0.06)", filter:"blur(120px)" }}/>
-          <div style={{ position:"absolute", bottom:0, right:"10%", width:400, height:400, borderRadius:"50%", background:"rgba(60,140,255,0.05)", filter:"blur(100px)" }}/>
-        </div>
-        <div style={{ position:"relative", zIndex:1, width:"100%" }}>
-          <DesktopNav screen={screen} setScreen={setScreen} onLogoTap={tapLogo} cartCount={cartCount} onCartClick={()=>setCartOpen(true)}/>
-          {screen==="home"  && <DesktopHome setScreen={setScreen} onLogoTap={tapLogo} onAddToCart={addToCart} onBuyNow={()=>setCheckoutOpen(true)} cart={cart} onCartClick={()=>setCartOpen(true)}/>}
-          {screen==="store" && <DesktopStore onAddToCart={addToCart} onBuyNow={()=>setCheckoutOpen(true)} cart={cart} onCartClick={()=>setCartOpen(true)}/>}
-          {screen==="nexus" && (
-            <div style={{ paddingTop:64, height:"100vh" }}>
-              <NexusScreen/>
-            </div>
-          )}
-        </div>
-        {cartOpen && <CartPanel cart={cart} onClose={()=>setCartOpen(false)} onRemove={removeFromCart} onUpdateQty={updateQty} onCheckout={()=>{ setCartOpen(false); setCheckoutOpen(true); }}/>}
+  if (orderId) return (
+    <div style={{ position:"fixed", inset:0, background:COLORS.bg, overflowY:"auto", zIndex:900, fontFamily:F, color:COLORS.text }}>
+      <div style={{ maxWidth:680, margin:"0 auto", padding:"40px 32px" }}>
+        <OrderStatusScreen orderId={orderId} onBack={()=>{ setOrderId(null); setCheckoutOpen(false); setCart([]); setScreen("home"); }} onOrderDelivered={()=>setCart([])}/>
       </div>
-    );
-  }
+    </div>
+  );
 
-
-  // Order status screen
-  if (orderId) {
-    return (
-      <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:COLORS.bg, overflowY:"auto", zIndex:1, fontFamily:F, color:COLORS.text }}>
-        <OrderStatusScreen orderId={orderId} onBack={()=>{ setOrderId(null); setCheckoutOpen(false); setCart([]); setScreen("home"); }} onOrderDelivered={()=>{ setCart([]); }}/>
+  if (checkoutOpen) return (
+    <div style={{ position:"fixed", inset:0, background:COLORS.bg, overflowY:"auto", zIndex:900, fontFamily:F, color:COLORS.text }}>
+      <div style={{ maxWidth:720, margin:"0 auto", padding:"40px 32px" }}>
+        <CheckoutScreen cart={cart} onBack={()=>setCheckoutOpen(false)} onOrderCreated={(id)=>{ setOrderId(id); setCheckoutOpen(false); }} session={session}/>
       </div>
-    );
-  }
+    </div>
+  );
+
+  if (deepLinkCard) return (
+    <DesktopLayout screen={screen} setScreen={setScreen} cart={cart} cartCount={cartCount} onCartClick={()=>setCartOpen(true)} onLogoTap={tapLogo} onAddToCart={addToCart} onBuyNow={()=>setCheckoutOpen(true)} orderId={orderId} setOrderId={setOrderId} setCheckoutOpen={setCheckoutOpen} checkoutOpen={checkoutOpen} cartOpen={cartOpen} setCartOpen={setCartOpen} removeFromCart={removeFromCart}>
+      <div style={{ maxWidth:1300, margin:"0 auto", padding:"80px 40px 60px", boxSizing:"border-box", width:"100%" }}>
+        <DesktopProductDetail card={deepLinkCard} onBack={()=>{ setDeepLinkCard(null); window.location.hash=""; }} onAddToCart={addToCart} onBuyNow={()=>{ setDeepLinkCard(null); setCheckoutOpen(true); }} cart={cart} onCartClick={()=>setCartOpen(true)} tasa={GLOBAL_TASA}/>
+      </div>
+    </DesktopLayout>
+  );
 
   return (
-    <div style={{ background:COLORS.bg, minHeight:"100vh", width:"100%", position:"relative", fontFamily:F, color:COLORS.text }}>
-      <div style={{ position:"fixed", inset:0, zIndex:0, pointerEvents:"none", overflow:"hidden" }}>
-        <div style={{ position:"absolute", top:-100, left:-80, width:320, height:320, borderRadius:"50%", background:"rgba(120,80,255,0.13)", filter:"blur(90px)" }}/>
-        <div style={{ position:"absolute", top:250, right:-60, width:260, height:260, borderRadius:"50%", background:"rgba(60,140,255,0.09)", filter:"blur(70px)" }}/>
-        <div style={{ position:"absolute", bottom:150, left:30, width:220, height:220, borderRadius:"50%", background:"rgba(255,255,255,0.04)", filter:"blur(60px)" }}/>
-      </div>
-      <style>{`
-        @media (min-width: 600px) {
-          .sg-desktop-wrap { max-width: 480px !important; margin: 0 auto !important; position: relative !important; }
-          .sg-desktop-root { display: flex; justify-content: center; background: #08080E; }
-        }
-      `}</style>
-      <div ref={mainScrollRef} data-main-scroll className={screen!=="nexus" ? "sg-desktop-root" : ""} style={{ position:"fixed", top:0, left:0, right:0, bottom:0, zIndex:1, overflowY:screen!=="nexus"?"auto":"hidden", paddingBottom:screen!=="nexus"?100:0 }}>
-        <div className={screen!=="nexus" ? "sg-desktop-wrap" : ""} style={{ width:"100%", minHeight:"100%" }}>
-          {deepLinkCard && <CardDetailScreen card={deepLinkCard} onBack={()=>{ setDeepLinkCard(null); window.location.hash = ""; }} onAddToCart={addToCart} onBuyNow={()=>{ setDeepLinkCard(null); window.location.hash = ""; setCartOpen(false); setCheckoutOpen(true); }} cart={cart} onCartClick={()=>setCartOpen(true)} tasa={GLOBAL_TASA}/>}
-          {!deepLinkCard && screen==="home"    && <HomeScreen setScreen={setScreen} onLogoTap={tapLogo} onAddToCart={addToCart} onBuyNow={()=>{ setCartOpen(false); setCheckoutOpen(true); }} cart={cart} onCartClick={()=>setCartOpen(true)}/>}
-          {!deepLinkCard && screen==="store"   && <StoreScreen onAddToCart={addToCart} onBuyNow={()=>{ setCartOpen(false); setCheckoutOpen(true); }} cart={cart} onCartClick={()=>setCartOpen(true)}/>}
-          {!deepLinkCard && screen==="nexus"   && <NexusScreen/>}
-          {screen==="profile" && <ProfileScreen profilePhoto={profilePhoto} setProfilePhoto={setProfilePhoto} session={session} setSession={setSession}/>}
-        </div>
-      </div>
-      {screen!=="nexus" && (
-        <div style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:200, display:"flex", justifyContent:"center" }}>
-          <div style={{ width:"100%", maxWidth:480 }}>
-            <BottomNav active={screen} setActive={setScreen} cartCount={cartCount} onCartClick={()=>setCartOpen(true)}/>
-          </div>
-        </div>
-      )}
-      {screen==="nexus" && (
-        <button onClick={()=>setScreen("home")} style={{ position:"fixed", bottom:80, left:16, zIndex:999, background:"rgba(10,10,20,0.55)", backdropFilter:"blur(12px)", border:"1px solid rgba(255,255,255,0.15)", borderRadius:20, color:"#F0EDE8", cursor:"pointer", fontSize:12, fontFamily:F, padding:"8px 16px", fontWeight:700 }}>← Volver</button>
-      )}
-      {cartOpen && <CartPanel cart={cart} onClose={()=>setCartOpen(false)} onRemove={removeFromCart} onUpdateQty={updateQty} onCheckout={()=>{ setCartOpen(false); setCheckoutOpen(true); }}/>}
-      {checkoutOpen && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, zIndex:400, background:COLORS.bg, overflowY:"auto", width:"100%" }}>
-          <CheckoutScreen cart={cart} onBack={()=>setCheckoutOpen(false)} onOrderCreated={(id)=>{ setOrderId(id); setCheckoutOpen(false); }} session={session}/>
-        </div>
-      )}
-    </div>
+    <DesktopLayout screen={screen} setScreen={setScreen} cart={cart} cartCount={cartCount} onCartClick={()=>setCartOpen(true)} onLogoTap={tapLogo} onAddToCart={addToCart} onBuyNow={()=>setCheckoutOpen(true)} orderId={orderId} setOrderId={setOrderId} setCheckoutOpen={setCheckoutOpen} checkoutOpen={checkoutOpen} cartOpen={cartOpen} setCartOpen={setCartOpen} removeFromCart={removeFromCart}/>
   );
 }
