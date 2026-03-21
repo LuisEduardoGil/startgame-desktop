@@ -4325,13 +4325,6 @@ function DesktopHomeScreen({ setScreen, onAddToCart, onBuyNow, cart, onCartClick
 
       {/* Últimas publicaciones */}
       <div style={{ marginBottom:48 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:20 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <defs><linearGradient id="ig2" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stopColor="#f09433"/><stop offset="50%" stopColor="#dc2743"/><stop offset="100%" stopColor="#bc1888"/></linearGradient></defs>
-            <rect x="2" y="2" width="20" height="20" rx="5" stroke="url(#ig2)" strokeWidth="2"/><circle cx="12" cy="12" r="4" stroke="url(#ig2)" strokeWidth="2"/><circle cx="17.5" cy="6.5" r="1.2" fill="url(#ig2)"/>
-          </svg>
-          <h2 style={{ color:COLORS.text, fontSize:22, fontWeight:900, margin:0, fontFamily:F }}>Últimas publicaciones</h2>
-        </div>
         <LoUltimo/>
       </div>
     </div>
