@@ -1338,10 +1338,10 @@ function GamesScreen({ onAddToCart, onBuyNow, cart, onCartClick }) {
   );
 }
 
-function NexusScreen() {
+function NexusScreen({ desktop }) {
   const [loaded, setLoaded] = useState(false);
   return (
-    <div style={{ position:"fixed", inset:0, background:"#0a0a14", zIndex:0 }}>
+    <div style={{ position: desktop ? "relative" : "fixed", inset:0, background:"#0a0a14", zIndex:0, width:"100%", height:"100%" }}>
       {!loaded && (
         <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:16, zIndex:2, background:"#0a0a14" }}>
           <img src={nexusLogo} style={{ width:108, height:108, objectFit:"contain", borderRadius:20 }} alt="Nexus"/>
@@ -4179,7 +4179,11 @@ function DesktopLayout({ screen, setScreen, cart, cartCount, onCartClick, onLogo
           {screen==="home"  && <DesktopHomeScreen setScreen={setScreen} onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} wrapStyle={W}/>}
           {screen==="store" && <DesktopStoreScreen onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} wrapStyle={W}/>}
           {screen==="games" && <DesktopGamesScreen onAddToCart={onAddToCart} onBuyNow={onBuyNow} cart={cart} onCartClick={onCartClick} wrapStyle={W}/>}
-          {screen==="nexus" && <div style={{ paddingTop:64, height:"100vh" }}><NexusScreen/></div>}
+          {screen==="nexus" && (
+            <div style={{ position:"fixed", top:64, left:0, right:0, bottom:0, zIndex:1 }}>
+              <NexusScreen desktop/>
+            </div>
+          )}
         </div>
       </div>
 
