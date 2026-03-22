@@ -4571,7 +4571,7 @@ function DesktopGamesScreen({ onAddToCart, onBuyNow, cart, onCartClick, wrapStyl
                   const price = u ? fmtBs(null,tasa,parseFloat(u)) : !isNaN(n) ? fmtBs(n,tasa) : a||"";
                   const isOferta = card.tag==="Oferta";
                   return (
-                    <span style={{ display:"inline-block", background:isOferta?"rgba(255,77,106,0.15)":"rgba(123,111,255,0.15)", border:`1px solid ${isOferta?"rgba(255,77,106,0.35)":"rgba(123,111,255,0.35)"}`, borderRadius:8, padding:"5px 12px", color:isOferta?"#FF4D6A":"#A89FFF", fontSize:12, fontFamily:F, fontWeight:800 }}>
+                    <span style={{ display:"inline-block", background:isOferta?"rgba(255,77,106,0.15)":"rgba(123,111,255,0.15)", border:`1px solid ${isOferta?"rgba(255,77,106,0.35)":"rgba(123,111,255,0.35)"}`, borderRadius:8, padding:"5px 12px", color:"#FFFFFF", fontSize:12, fontFamily:F, fontWeight:800 }}>
                       {price}
                     </span>
                   );
