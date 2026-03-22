@@ -4471,8 +4471,8 @@ function DesktopGameDetail({ card, onAddToCart, onBuyNow, cart, tasa }) {
                 {usdtVal ? fmtBs(null,t,usdtVal) : !isNaN(numAmt) ? fmtBs(numAmt,t) : fixedAmount}
               </p>
               <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:6 }}>
-                {usdtVal && <p style={{ color:"rgba(255,255,255,0.4)", fontSize:12, fontFamily:F, margin:0 }}>{usdtVal.toFixed(2)} USDT</p>}
-                {isOnSale && originalPrice && <p style={{ color:"rgba(255,255,255,0.25)", fontSize:12, fontFamily:F, margin:0, textDecoration:"line-through" }}>{originalPrice.toFixed(2)} USDT</p>}
+                {usdtVal && <p style={{ color:"rgba(255,255,255,0.85)", fontSize:12, fontFamily:F, margin:0 }}>{usdtVal.toFixed(2)} USDT</p>}
+                {isOnSale && originalPrice && <p style={{ color:"rgba(255,255,255,0.4)", fontSize:12, fontFamily:F, margin:0, textDecoration:"line-through" }}>{originalPrice.toFixed(2)} USDT</p>}
               </div>
             </div>
             <div style={{ display:"flex", flexDirection:"column", gap:6, alignItems:"flex-end" }}>
@@ -4485,9 +4485,9 @@ function DesktopGameDetail({ card, onAddToCart, onBuyNow, cart, tasa }) {
         </div>
 
         <div style={{ display:"flex", gap:12, marginBottom:14 }}>
-          <button onClick={handleBuyNow} style={{ flex:1, padding:"15px", background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.28)", borderRadius:14, color:COLORS.text, fontSize:14, fontWeight:800, fontFamily:F, cursor:"pointer" }}>Comprar ahora</button>
-          <button onClick={handleAddToCart} style={{ flex:1, padding:"15px", background:added?"rgba(0,200,150,0.15)":"rgba(123,111,255,0.15)", border:`1px solid ${added?"rgba(0,200,150,0.4)":"rgba(123,111,255,0.35)"}`, borderRadius:14, color:added?"#00C896":"#A89FFF", fontSize:14, fontWeight:800, fontFamily:F, cursor:"pointer", transition:"all 0.2s" }}>
-            {added?"✓ AGREGADO":"+ AL CARRITO"}
+          <button onClick={handleBuyNow} style={{ flex:1, padding:"15px", background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.28)", borderRadius:14, color:"#FFFFFF", fontSize:14, fontWeight:800, fontFamily:F, cursor:"pointer" }}>Comprar ahora</button>
+          <button onClick={handleAddToCart} style={{ flex:1, padding:"15px", background:added?"rgba(0,200,150,0.2)":"rgba(123,111,255,0.2)", border:`1px solid ${added?"rgba(0,200,150,0.4)":"rgba(123,111,255,0.4)"}`, borderRadius:14, color:"#FFFFFF", fontSize:14, fontWeight:800, fontFamily:F, cursor:"pointer", transition:"all 0.2s" }}>
+            {added?"✓ AGREGADO":"Agregar al carrito"}
           </button>
         </div>
         <p style={{ color:"rgba(255,255,255,0.25)", fontSize:11, textAlign:"center", fontFamily:F, margin:0 }}>🔒 Entrega digital segura · 10–30 minutos</p>
