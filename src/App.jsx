@@ -4464,7 +4464,7 @@ function DesktopGameDetail({ card, onAddToCart, onBuyNow, cart, tasa }) {
         <h1 style={{ color:COLORS.text, fontSize:32, fontWeight:900, margin:"0 0 24px", fontFamily:F, lineHeight:1.15 }}>{card.name}</h1>
 
         <div style={{ background:"rgba(255,255,255,0.04)", border:`1px solid ${isOnSale?"rgba(255,77,106,0.25)":"rgba(255,255,255,0.08)"}`, borderRadius:18, padding:"24px", marginBottom:20 }}>
-          <p style={{ color:"rgba(255,255,255,0.4)", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.12em", margin:"0 0 14px" }}>PRECIO</p>
+          <p style={{ color:"rgba(255,255,255,0.85)", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.12em", margin:"0 0 14px" }}>PRECIO</p>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
             <div>
               <p style={{ color:COLORS.text, fontSize:28, fontWeight:900, fontFamily:F, margin:0 }}>
@@ -4636,7 +4636,7 @@ function DesktopProductDetail({ card, onBack, onAddToCart, onBuyNow, cart, onCar
           <h1 style={{ color:COLORS.text, fontSize:32, fontWeight:900, margin:"0 0 24px", fontFamily:F, lineHeight:1.15 }}>{card.name}</h1>
 
           <div style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:18, padding:"24px", marginBottom:20 }}>
-            <p style={{ color:"rgba(255,255,255,0.4)", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.12em", margin:"0 0 12px" }}>MONTO</p>
+            <p style={{ color:"rgba(255,255,255,0.85)", fontSize:10, fontFamily:F, fontWeight:700, letterSpacing:"0.12em", margin:"0 0 12px" }}>MONTO</p>
             <div style={{ position:"relative", marginBottom:20 }}>
               <select value={selectedAmount} onChange={e=>setSelectedAmount(e.target.value)} style={{ width:"100%", padding:"14px 16px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.18)", borderRadius:12, color:selectedAmount?COLORS.text:"rgba(255,255,255,0.3)", fontSize:14, fontFamily:F, fontWeight:600, cursor:"pointer", outline:"none", appearance:"none" }}>
                 <option value="" disabled style={{ background:"#1a1a2e" }}>ELIGE UNA OPCIÓN</option>
@@ -4650,7 +4650,7 @@ function DesktopProductDetail({ card, onBack, onAddToCart, onBuyNow, cart, onCar
             </div>
 
             <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:20 }}>
-              <p style={{ color:"rgba(255,255,255,0.4)", fontSize:11, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:0 }}>CANTIDAD</p>
+              <p style={{ color:"rgba(255,255,255,0.85)", fontSize:11, fontFamily:F, fontWeight:700, letterSpacing:"0.1em", margin:0 }}>CANTIDAD</p>
               <div style={{ display:"flex", alignItems:"center", background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.15)", borderRadius:10, overflow:"hidden" }}>
                 <button onClick={()=>setQuantity(q=>Math.max(1,q-1))} style={{ width:38, height:38, background:"none", border:"none", color:COLORS.text, fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>−</button>
                 <span style={{ minWidth:36, textAlign:"center", color:COLORS.text, fontSize:15, fontWeight:800, fontFamily:F }}>{quantity}</span>
@@ -4660,16 +4660,16 @@ function DesktopProductDetail({ card, onBack, onAddToCart, onBuyNow, cart, onCar
 
             <div style={{ height:1, background:"rgba(255,255,255,0.07)", marginBottom:18 }}/>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <p style={{ color:"rgba(255,255,255,0.5)", fontSize:14, fontFamily:F, fontWeight:700, margin:0 }}>Total</p>
+              <p style={{ color:"rgba(255,255,255,0.85)", fontSize:14, fontFamily:F, fontWeight:700, margin:0 }}>Total</p>
               <div style={{ textAlign:"right" }}>
                 {!selectedAmount ? <p style={{ color:COLORS.text, fontSize:24, fontWeight:900, fontFamily:F, margin:0 }}>Bs. 0,00</p>
                   : totalUsdtCard ? <>
                     <p style={{ color:COLORS.text, fontSize:24, fontWeight:900, fontFamily:F, margin:0 }}>{fmtBs(null,t,totalUsdtCard)}</p>
-                    <p style={{ color:"rgba(255,255,255,0.4)", fontSize:12, fontFamily:F, margin:"3px 0 0" }}>{totalUsdtCard.toFixed(2)} USDT</p>
+                    <p style={{ color:"rgba(255,255,255,0.85)", fontSize:12, fontFamily:F, margin:"3px 0 0" }}>{totalUsdtCard.toFixed(2)} USDT</p>
                   </>
                   : isPureNumeric&&total>0 ? <>
                     <p style={{ color:COLORS.text, fontSize:24, fontWeight:900, fontFamily:F, margin:0 }}>{fmtBs(total,t)}</p>
-                    <p style={{ color:"rgba(255,255,255,0.4)", fontSize:12, fontFamily:F, margin:"3px 0 0" }}>${total} USD</p>
+                    <p style={{ color:"rgba(255,255,255,0.85)", fontSize:12, fontFamily:F, margin:"3px 0 0" }}>${total} USD</p>
                   </>
                   : <p style={{ color:COLORS.text, fontSize:22, fontWeight:900, fontFamily:F, margin:0 }}>{selectedAmount}</p>
                 }
@@ -4678,11 +4678,11 @@ function DesktopProductDetail({ card, onBack, onAddToCart, onBuyNow, cart, onCar
           </div>
 
           <div style={{ display:"flex", gap:12, marginBottom:14 }}>
-            <button onClick={handleBuyNow} disabled={!selectedAmount} style={{ flex:1, padding:"15px", background:selectedAmount?"rgba(255,255,255,0.15)":"rgba(255,255,255,0.05)", border:`1px solid ${selectedAmount?"rgba(255,255,255,0.28)":"rgba(255,255,255,0.08)"}`, borderRadius:14, color:selectedAmount?COLORS.text:"rgba(255,255,255,0.3)", fontSize:14, fontWeight:800, fontFamily:F, cursor:selectedAmount?"pointer":"not-allowed", transition:"all 0.15s" }}>
+            <button onClick={handleBuyNow} disabled={!selectedAmount} style={{ flex:1, padding:"15px", background:selectedAmount?"rgba(255,255,255,0.15)":"rgba(255,255,255,0.05)", border:`1px solid ${selectedAmount?"rgba(255,255,255,0.28)":"rgba(255,255,255,0.08)"}`, borderRadius:14, color:"#FFFFFF", fontSize:14, fontWeight:800, fontFamily:F, cursor:selectedAmount?"pointer":"not-allowed", transition:"all 0.15s" }}>
               Comprar ahora
             </button>
-            <button onClick={handleAddToCart} disabled={!selectedAmount} style={{ flex:1, padding:"15px", background:added?"rgba(0,200,150,0.15)":selectedAmount?"rgba(123,111,255,0.15)":"rgba(255,255,255,0.04)", border:`1px solid ${added?"rgba(0,200,150,0.4)":selectedAmount?"rgba(123,111,255,0.35)":"rgba(255,255,255,0.08)"}`, borderRadius:14, color:added?"#00C896":selectedAmount?"#A89FFF":"rgba(255,255,255,0.25)", fontSize:14, fontWeight:800, fontFamily:F, cursor:selectedAmount?"pointer":"not-allowed", transition:"all 0.2s" }}>
-              {added?"✓ AGREGADO":"+ AL CARRITO"}
+            <button onClick={handleAddToCart} disabled={!selectedAmount} style={{ flex:1, padding:"15px", background:added?"rgba(0,200,150,0.2)":selectedAmount?"rgba(123,111,255,0.2)":"rgba(255,255,255,0.04)", border:`1px solid ${added?"rgba(0,200,150,0.4)":selectedAmount?"rgba(123,111,255,0.4)":"rgba(255,255,255,0.08)"}`, borderRadius:14, color:"#FFFFFF", fontSize:14, fontWeight:800, fontFamily:F, cursor:selectedAmount?"pointer":"not-allowed", transition:"all 0.2s" }}>
+              {added?"✓ AGREGADO":"Agregar al carrito"}
             </button>
           </div>
           <p style={{ color:"rgba(255,255,255,0.25)", fontSize:11, textAlign:"center", fontFamily:F, margin:0 }}>🔒 Entrega digital segura · 0–10 minutos</p>
