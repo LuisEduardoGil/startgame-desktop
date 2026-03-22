@@ -4402,7 +4402,7 @@ function DesktopStoreScreen({ onAddToCart, onBuyNow, cart, onCartClick, wrapStyl
                 </div>
                 <div style={{ padding:"14px 14px 12px" }}>
                   <p style={{ color:COLORS.text, fontWeight:700, fontSize:14, margin:"0 0 4px", fontFamily:F }}>{card.name}</p>
-                  <p style={{ color:"rgba(255,255,255,0.45)", fontSize:11, margin:"0 0 14px", fontFamily:F }}>
+                  <p style={{ color:"rgba(255,255,255,0.75)", fontSize:11, margin:"0 0 14px", fontFamily:F }}>
                     {(()=>{ const a=(card.amounts||[])[0]; const u=getUsdt(card,a); const n=parseFloat(String(a)); if(u) return `Desde ${fmtBs(null,GLOBAL_TASA,parseFloat(u))}`; if(!isNaN(n)) return `Desde ${fmtBs(n,GLOBAL_TASA)}`; return `Desde ${a||""}`; })()}
                   </p>
                   <button style={{ width:"100%", background:"rgba(255,255,255,0.08)", color:COLORS.text, border:"1px solid rgba(255,255,255,0.15)", borderRadius:9, padding:"9px", fontSize:11, fontFamily:F, fontWeight:700, cursor:"pointer" }}>VER MONTOS →</button>
@@ -4563,11 +4563,19 @@ function DesktopGamesScreen({ onAddToCart, onBuyNow, cart, onCartClick, wrapStyl
                 {card.tag && <span style={{ position:"absolute", top:9, right:9, background:card.tag==="Oferta"?COLORS.danger:card.tag==="Nuevo"?"rgba(123,111,255,0.9)":"rgba(0,0,0,0.6)", backdropFilter:"blur(8px)", color:"#fff", fontSize:9, fontFamily:F, fontWeight:700, padding:"3px 8px", borderRadius:5 }}>{card.tag}</span>}
               </div>
               <div style={{ padding:"12px 14px" }}>
-                <p style={{ color:COLORS.text, fontWeight:700, fontSize:13, margin:"0 0 4px", fontFamily:F }}>{card.name}</p>
-                <p style={{ color:"rgba(255,255,255,0.4)", fontSize:11, margin:"0 0 12px", fontFamily:F }}>
-                  {(()=>{ const a=(card.amounts||[])[0]; const u=getUsdt(card,a); const n=parseFloat(String(a)); if(u) return `Desde ${fmtBs(null,tasa,parseFloat(u))}`; if(!isNaN(n)) return `Desde ${fmtBs(n,tasa)}`; return `Desde ${a||""}`; })()}
-                </p>
-                <button style={{ width:"100%", background:"rgba(255,255,255,0.08)", color:COLORS.text, border:"1px solid rgba(255,255,255,0.15)", borderRadius:9, padding:"8px", fontSize:11, fontFamily:F, fontWeight:700, cursor:"pointer" }}>VER MONTOS →</button>
+                <p style={{ color:COLORS.text, fontWeight:700, fontSize:13, margin:"0 0 8px", fontFamily:F }}>{card.name}</p>
+                {(()=>{
+                  const a=(card.amounts||[])[0];
+                  const u=getUsdt(card,a);
+                  const n=parseFloat(String(a));
+                  const price = u ? fmtBs(null,tasa,parseFloat(u)) : !isNaN(n) ? fmtBs(n,tasa) : a||"";
+                  const isOferta = card.tag==="Oferta";
+                  return (
+                    <span style={{ display:"inline-block", background:isOferta?"rgba(255,77,106,0.15)":"rgba(123,111,255,0.15)", border:`1px solid ${isOferta?"rgba(255,77,106,0.35)":"rgba(123,111,255,0.35)"}`, borderRadius:8, padding:"5px 12px", color:isOferta?"#FF4D6A":"#A89FFF", fontSize:12, fontFamily:F, fontWeight:800 }}>
+                      {price}
+                    </span>
+                  );
+                })()}
               </div>
             </div>
           ))}
